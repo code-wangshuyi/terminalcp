@@ -27,7 +27,8 @@ class AttachClient:
         print("", file=sys.stderr)
 
         self.reader, self.writer = await asyncio.open_unix_connection(
-            os.path.join(os.path.expanduser("~"), ".terminalcp", "server.sock")
+            os.path.join(os.path.expanduser("~"), ".terminalcp", "server.sock"),
+            limit=10*1024*1024,
         )
         self.attached_session = session_id
 
@@ -79,7 +80,10 @@ class AttachClient:
     async def _read_loop(self) -> None:
         assert self.reader is not None
         while not self.reader.at_eof():
-            line = await self.reader.readline()
+            try:
+                line = await self.reader.readline()
+            except ValueError:
+                continue
             if not line:
                 break
             try:

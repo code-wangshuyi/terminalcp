@@ -96,7 +96,7 @@ class TerminalClient:
         if not os.path.exists(self.socket_path):
             return False
         try:
-            reader, writer = await asyncio.wait_for(asyncio.open_unix_connection(self.socket_path), timeout=0.1)
+            reader, writer = await asyncio.wait_for(asyncio.open_unix_connection(self.socket_path, limit=10*1024*1024), timeout=0.1)
             writer.close()
             await writer.wait_closed()
             return True
@@ -104,7 +104,7 @@ class TerminalClient:
             return False
 
     async def _connect_to_server(self) -> None:
-        self.reader, self.writer = await asyncio.open_unix_connection(self.socket_path)
+        self.reader, self.writer = await asyncio.open_unix_connection(self.socket_path, limit=10*1024*1024)
         self.connected = True
         self._reader_task = asyncio.create_task(self._reader_loop())
 
@@ -112,7 +112,10 @@ class TerminalClient:
         assert self.reader is not None
         try:
             while not self.reader.at_eof():
-                line = await self.reader.readline()
+                try:
+                    line = await self.reader.readline()
+                except ValueError:
+                    continue
                 if not line:
                     break
                 line_str = line.decode("utf-8", errors="replace").strip()

@@ -45,7 +45,7 @@ class TerminalServer:
             except OSError:
                 pass
 
-        self.server = await asyncio.start_unix_server(self._handle_client, path=self.server_socket_path)
+        self.server = await asyncio.start_unix_server(self._handle_client, path=self.server_socket_path, limit=10*1024*1024)
         os.chmod(self.server_socket_path, 0o600)
         print(f"Terminal server listening at {self.server_socket_path}", file=sys.stderr)
 
@@ -84,7 +84,10 @@ class TerminalServer:
 
         try:
             while not reader.at_eof():
-                line = await reader.readline()
+                try:
+                    line = await reader.readline()
+                except ValueError:
+                    continue
                 if not line:
                     break
                 line_str = line.decode("utf-8", errors="replace").strip()

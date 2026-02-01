@@ -1,7 +1,7 @@
 # fish completion for terminalcp
 
 function __terminalcp_sessions
-    terminalcp list 2>/dev/null | string match -r '^\s+\S+' | string trim
+    terminalcp list --ids 2>/dev/null
 end
 
 set -l commands list ls start stop attach stdout stream stdin resize term-size completion version kill-server
@@ -32,6 +32,9 @@ complete -c terminalcp -n "not __fish_seen_subcommand_from $commands" -a kill-se
 for cmd in stop attach stdout stream stdin resize term-size
     complete -c terminalcp -n "__fish_seen_subcommand_from $cmd" -a "(__terminalcp_sessions)" -d "Session"
 end
+
+# List options
+complete -c terminalcp -n "__fish_seen_subcommand_from list ls" -l ids -d "Only show session ids"
 
 # Stream options
 complete -c terminalcp -n "__fish_seen_subcommand_from stream" -l since-last -d "Only show new output"

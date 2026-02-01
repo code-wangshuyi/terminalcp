@@ -66,6 +66,7 @@ def _install_zsh() -> None:
         [
             (".zsh/completions", "fpath=(~/.zsh/completions $fpath)\n"),
             ("compinit", "autoload -Uz compinit && compinit\n"),
+            ("compdef _terminalcp terminalcp", "compdef _terminalcp terminalcp\n"),
         ],
     )
 

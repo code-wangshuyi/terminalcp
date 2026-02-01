@@ -30,7 +30,7 @@ USAGE:
   terminalcp <command> [options]         Run a CLI command
 
 COMMANDS:
-  list, ls                               List all active sessions
+  list, ls [--ids]                       List all active sessions
   start <id> <command>                   Start a new named session
   stop [id]                              Stop session(s) (all if no id given)
   attach <id>                            Attach to a session interactively
@@ -125,20 +125,40 @@ def main() -> None:
     command = args[0]
 
     if command in {"ls", "list"}:
+        list_ids_only = False
+        for arg in args[1:]:
+            if arg == "--ids":
+                list_ids_only = True
+            elif arg in {"-h", "--help"}:
+                print("Usage: terminalcp list [--ids]")
+                return
+            else:
+                print(f"Unknown option for list: {arg}", file=sys.stderr)
+                raise SystemExit(1)
         async def _list() -> None:
             client = TerminalClient()
             try:
                 response = await client.request({"action": "list"})
             except Exception as exc:
                 if str(exc) == "No server running":
-                    print("No active sessions")
+                    if not list_ids_only:
+                        print("No active sessions")
                     return
                 print(str(exc), file=sys.stderr)
                 raise SystemExit(1)
 
             lines = [line for line in str(response).split("\n") if line.strip()]
             if not lines:
-                print("No active sessions")
+                if not list_ids_only:
+                    print("No active sessions")
+                return
+            if list_ids_only:
+                ids = []
+                for line in lines:
+                    parts = line.split(" ")
+                    if parts and parts[0]:
+                        ids.append(parts[0])
+                print("\n".join(ids))
                 return
             for line in lines:
                 parts = line.split(" ")

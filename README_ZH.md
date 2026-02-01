@@ -273,6 +273,7 @@ cp /path/to/terminalcp/terminalcp/completion/scripts/_terminalcp.zsh ~/.zsh/comp
 ```bash
 fpath=(~/.zsh/completions $fpath)
 autoload -Uz compinit && compinit
+compdef _terminalcp terminalcp
 ```
 
 ## 附加到会话

@@ -273,6 +273,7 @@ Enable completions in `~/.zshrc`:
 ```bash
 fpath=(~/.zsh/completions $fpath)
 autoload -Uz compinit && compinit
+compdef _terminalcp terminalcp
 ```
 
 ## Attaching to Sessions

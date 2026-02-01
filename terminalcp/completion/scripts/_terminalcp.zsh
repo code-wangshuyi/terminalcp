@@ -2,7 +2,7 @@
 
 _terminalcp_sessions() {
   local -a sessions
-  sessions=(${(f)"$(terminalcp list 2>/dev/null | sed -n 's/^  \([^ ]\+\).*/\1/p')"})
+  sessions=(${(f)"$(terminalcp list --ids 2>/dev/null)"})
   _values 'session' $sessions
 }
 
@@ -35,9 +35,10 @@ _terminalcp() {
       _describe 'command' commands
       ;;
     args)
-      local cmd=$words[2]
+      local cmd=$words[1]
       case $cmd in
         list|ls)
+          _arguments '--ids[Only show session ids]'
           ;;
         start)
           _arguments \
@@ -85,5 +86,9 @@ _terminalcp() {
       ;;
   esac
 }
+
+if (( $+functions[compdef] )); then
+  compdef _terminalcp terminalcp
+fi
 
 _terminalcp "$@"

@@ -2,7 +2,7 @@
 
 _terminalcp_sessions() {
     local sessions
-    sessions=$(terminalcp list 2>/dev/null | sed -n 's/^  \([^ ]\+\).*/\1/p')
+    sessions=$(terminalcp list --ids 2>/dev/null)
     echo "$sessions"
 }
 
@@ -30,7 +30,12 @@ _terminalcp() {
     local cmd="${words[1]}"
 
     case "$cmd" in
-        list|ls|version|kill-server)
+        list|ls)
+            if [[ $cword -eq 2 ]]; then
+                COMPREPLY=($(compgen -W "--ids" -- "$cur"))
+            fi
+            ;;
+        version|kill-server)
             # No further arguments
             ;;
         start)

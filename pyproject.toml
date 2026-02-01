@@ -1,6 +1,6 @@
 [project]
 name = "terminalcp"
-version = "1.3.3"
+version = "1.0.0"
 description = "MCP server for spawning and controlling background processes with virtual terminals (Python port)"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -22,6 +22,3 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["terminalcp"]
-
-[tool.hatch.build.targets.wheel.force-include]
-"terminalcp/completion/scripts" = "terminalcp/completion/scripts"

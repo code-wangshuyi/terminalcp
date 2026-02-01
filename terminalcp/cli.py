@@ -185,7 +185,7 @@ def main() -> None:
         async def _start() -> None:
             client = TerminalClient()
             try:
-                result = await client.request({"action": "start", "command": command_text, "name": session_id})
+                result = await client.request({"action": "start", "command": command_text, "name": session_id, "cwd": os.getcwd()})
             except Exception as exc:
                 print(f"Failed to start session: {exc}", file=sys.stderr)
                 raise SystemExit(1)

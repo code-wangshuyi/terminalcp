@@ -253,6 +253,42 @@ terminalcp version
 terminalcp kill-server
 ```
 
+### CLI Special Keys
+
+Use the `::` prefix to send special keys via `terminalcp stdin`:
+
+```bash
+# Enter
+terminalcp stdin <id> "hello world" ::Enter
+
+# Arrow keys
+terminalcp stdin <id> ::Up
+terminalcp stdin <id> ::Down
+terminalcp stdin <id> ::Left
+terminalcp stdin <id> ::Right
+
+# Escape
+terminalcp stdin <id> ::Escape   # or ::Esc
+
+# Combined example
+terminalcp stdin <id> "echo test" ::Left ::Left ::Left "hi " ::Enter
+
+# Ctrl combinations
+terminalcp stdin <id> ::C-c      # Ctrl+C
+```
+
+All supported special keys:
+
+| Category | Keys |
+|----------|------|
+| Navigation | `::Up`, `::Down`, `::Left`, `::Right`, `::Home`, `::End`, `::PageUp`, `::PageDown` |
+| Editing | `::Enter`, `::Tab`, `::BSpace` (Backspace), `::Space`, `::Delete`, `::Insert` |
+| Escape | `::Escape` or `::Esc` |
+| Function keys | `::F1` - `::F12` |
+| Ctrl | `::C-a` - `::C-z`, `::C-c` (interrupt), `::C-d` (EOF) |
+| Alt/Meta | `::M-x`, `::M-b`, `::M-f`, etc. |
+| Shift | `::S-Tab` (back-tab) |
+
 ## Zsh Completion
 
 Auto-install (recommended):

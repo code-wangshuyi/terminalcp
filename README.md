@@ -174,6 +174,50 @@ The following examples show the JSON arguments passed to the single `terminalcp`
 // Returns: "shutting down"
 ```
 
+### Status Monitoring (Claude Code CLI)
+
+Monitor the execution state of Claude Code CLI sessions in real-time:
+
+```json
+// Get current execution status
+{"action": "status", "id": "claude"}
+// Returns: JSON with terminal_state, task_status, timing, and interaction details
+```
+
+**Response Structure:**
+
+```json
+{
+  "terminal_state": "interactive",           // running | interactive | completed
+  "task_status": "waiting_for_input",        // pending | running | waiting_for_input | completed | failed
+  "stable_count": 3,                         // Output stability counter
+  "detail": {
+    "description": "Waiting for permission confirmation",
+    "interaction_type": "permission_confirm", // Type of interaction detected
+    "choices": ["Yes", "No"]                  // Available response options
+  },
+  "timing": {
+    "started_at": "2026-02-09T10:30:00Z",
+    "completed_at": null,
+    "duration_seconds": null
+  }
+}
+```
+
+**Interaction Types:**
+- `permission_confirm` - Tool permission requests ("Allow tool X?")
+- `highlighted_option` - Menu with highlighted selection (❯)
+- `plan_approval` - Action plan confirmation ("Proceed?")
+- `user_question` - General questions ("Do you want to...")
+- `selection_menu` - Numbered or bulleted option lists
+
+**Use Cases:**
+- Detect when Claude Code needs user input
+- Automatically respond to permission prompts
+- Monitor task progress and completion
+- Build orchestration systems that coordinate multiple AI agents
+- Implement retry logic based on execution state
+
 ### Interactive AI Agents Example
 
 ```json
@@ -228,6 +272,10 @@ terminalcp attach my-app
 # Get output from a session
 terminalcp stdout my-app
 terminalcp stdout my-app 50  # Last 50 lines
+
+# Get execution status (Claude Code CLI)
+terminalcp status my-claude-session
+terminalcp status my-claude-session --json  # Raw JSON output
 
 # Send input to a session (use :: prefix for special keys)
 terminalcp stdin my-app "echo hello" ::Enter
@@ -518,6 +566,7 @@ The MCP server exposes a single tool called `terminalcp` that accepts JSON comma
 | `stream` | `id`, `since_last?`, `strip_ansi?` | Raw output text |
 | `stdin` | `id`, `data` | Empty string |
 | `list` | — | Newline-separated session list |
+| `status` | `id` | JSON with execution state (Claude Code CLI) |
 | `term-size` | `id` | "rows cols scrollback_lines" |
 | `kill-server` | — | "shutting down" |
 

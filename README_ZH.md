@@ -174,6 +174,50 @@ claude mcp add -s user terminalcp uvx terminalcp --mcp
 // 返回: "shutting down"
 ```
 
+### 状态监控（Claude Code CLI）
+
+实时监控 Claude Code CLI 会话的执行状态：
+
+```json
+// 获取当前执行状态
+{"action": "status", "id": "claude"}
+// 返回: 包含 terminal_state、task_status、timing 和交互详情的 JSON
+```
+
+**响应结构：**
+
+```json
+{
+  "terminal_state": "interactive",           // running | interactive | completed
+  "task_status": "waiting_for_input",        // pending | running | waiting_for_input | completed | failed
+  "stable_count": 3,                         // 输出稳定性计数器
+  "detail": {
+    "description": "等待权限确认",
+    "interaction_type": "permission_confirm", // 检测到的交互类型
+    "choices": ["Yes", "No"]                  // 可用的响应选项
+  },
+  "timing": {
+    "started_at": "2026-02-09T10:30:00Z",
+    "completed_at": null,
+    "duration_seconds": null
+  }
+}
+```
+
+**交互类型：**
+- `permission_confirm` - 工具权限请求（"Allow tool X?"）
+- `highlighted_option` - 带高亮选择的菜单（❯）
+- `plan_approval` - 操作计划确认（"Proceed?"）
+- `user_question` - 一般性问题（"Do you want to..."）
+- `selection_menu` - 编号或项目符号选项列表
+
+**使用场景：**
+- 检测 Claude Code 何时需要用户输入
+- 自动响应权限提示
+- 监控任务进度和完成状态
+- 构建协调多个 AI 代理的编排系统
+- 基于执行状态实现重试逻辑
+
 ### AI 代理交互示例
 
 ```json
@@ -228,6 +272,10 @@ terminalcp attach my-app
 # 获取会话输出
 terminalcp stdout my-app
 terminalcp stdout my-app 50  # 最后 50 行
+
+# 获取执行状态（Claude Code CLI）
+terminalcp status my-claude-session
+terminalcp status my-claude-session --json  # 原始 JSON 输出
 
 # 向会话发送输入（使用 :: 前缀表示特殊键）
 terminalcp stdin my-app "echo hello" ::Enter
@@ -482,6 +530,7 @@ MCP 服务器暴露一个名为 `terminalcp` 的工具，接受不同 action 类
 | `stream` | `id`, `since_last?`, `strip_ansi?` | 原始输出文本 |
 | `stdin` | `id`, `data` | 空字符串 |
 | `list` | — | 换行分隔的会话列表 |
+| `status` | `id` | 包含执行状态的 JSON（Claude Code CLI） |
 | `term-size` | `id` | "rows cols scrollback_lines" |
 | `kill-server` | — | "shutting down" |
 

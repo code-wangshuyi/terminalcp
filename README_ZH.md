@@ -117,6 +117,10 @@ claude mcp add -s user terminalcp uvx terminalcp --mcp
 // 在指定目录启动
 {"action": "start", "command": "python3 script.py", "cwd": "/path/to/project", "name": "analyzer"}
 // 返回: "analyzer"
+
+// 启动 Claude Code 会话（标记为可监控状态）
+{"action": "start", "command": "claude", "name": "my-claude", "is_claude": true}
+// 返回: "my-claude"
 ```
 
 ### 与运行中的会话交互
@@ -159,7 +163,10 @@ claude mcp add -s user terminalcp uvx terminalcp --mcp
 ```json
 // 列出所有会话
 {"action": "list"}
-// 返回: "dev-server running /Users/you/project npm run dev\nanalyzer stopped /path python3 script.py"
+// 返回: "dev-server running - /Users/you/project npm run dev\nmy-claude running claude /path claude"
+
+// 仅列出 Claude 会话
+{"action": "list", "claude_only": true}
 
 // 停止指定进程
 {"action": "stop", "id": "dev-server"}
@@ -174,58 +181,35 @@ claude mcp add -s user terminalcp uvx terminalcp --mcp
 // 返回: "shutting down"
 ```
 
-### 状态监控（Claude Code CLI）
-
-实时监控 Claude Code CLI 会话的执行状态：
+### Claude Code 状态监控
 
 ```json
-// 获取当前执行状态
-{"action": "status", "id": "claude"}
-// 返回: 包含 terminal_state、task_status、timing 和交互详情的 JSON
+// 获取 Claude 会话状态（processing/interactive/completed/idle）
+{"action": "claude-status", "id": "my-claude"}
+// 返回: "processing: Brewing" 或 "interactive: Should I proceed?" 或 "completed: Brewed" 或 "idle"
+
+// 获取 Claude 提示词模式（plan/accept-edits/default）
+{"action": "claude-status", "id": "my-claude", "mode": true}
+// 返回: "plan" 或 "accept-edits" 或 "default"
 ```
 
-**响应结构：**
-
-```json
-{
-  "terminal_state": "interactive",           // running | interactive | completed
-  "task_status": "waiting_for_input",        // pending | running | waiting_for_input | completed | failed
-  "stable_count": 3,                         // 输出稳定性计数器
-  "detail": {
-    "description": "等待权限确认",
-    "interaction_type": "permission_confirm", // 检测到的交互类型
-    "choices": ["Yes", "No"]                  // 可用的响应选项
-  },
-  "timing": {
-    "started_at": "2026-02-09T10:30:00Z",
-    "completed_at": null,
-    "duration_seconds": null
-  }
-}
-```
-
-**交互类型：**
-- `permission_confirm` - 工具权限请求（"Allow tool X?"）
-- `highlighted_option` - 带高亮选择的菜单（❯）
-- `plan_approval` - 操作计划确认（"Proceed?"）
-- `user_question` - 一般性问题（"Do you want to..."）
-- `selection_menu` - 编号或项目符号选项列表
-
-**使用场景：**
-- 检测 Claude Code 何时需要用户输入
-- 自动响应权限提示
-- 监控任务进度和完成状态
-- 构建协调多个 AI 代理的编排系统
-- 基于执行状态实现重试逻辑
 
 ### AI 代理交互示例
 
 ```json
-// 启动 Claude
-{"action": "start", "command": "/path/to/claude --dangerously-skip-permissions", "name": "claude"}
+// 启动 Claude 为可监控会话
+{"action": "start", "command": "claude --dangerously-skip-permissions", "name": "claude", "is_claude": true}
 
 // 发送提示
 {"action": "stdin", "id": "claude", "data": "Write a test for main.py\r"}
+
+// 查看 Claude 当前状态
+{"action": "claude-status", "id": "claude"}
+// 返回: "processing: Thinking" 或 "interactive: Should I proceed?" 或 "completed: Brewed" 或 "idle"
+
+// 查看 Claude 提示词模式
+{"action": "claude-status", "id": "claude", "mode": true}
+// 返回: "plan" 或 "accept-edits" 或 "default"
 
 // 获取响应
 {"action": "stdout", "id": "claude"}
@@ -263,8 +247,14 @@ terminalcp 也可以作为独立的 CLI 工具使用：
 # 列出所有活跃会话
 terminalcp ls
 
+# 仅列出 Claude 会话
+terminalcp list --claude
+
 # 启动一个自定义名称的新会话
 terminalcp start my-app "npm run dev"
+
+# 启动 Claude 会话（标记为可监控状态）
+terminalcp start my-claude --claude "claude"
 
 # 交互式附加到会话（Ctrl+B 分离）
 terminalcp attach my-app
@@ -291,6 +281,12 @@ terminalcp resize my-app 120 40
 
 # 获取终端大小
 terminalcp term-size my-app
+
+# 查看 Claude 会话状态（processing/interactive/completed/idle）
+terminalcp status --claude my-claude
+
+# 查看 Claude 提示词模式（plan/accept-edits/default）
+terminalcp status --claude --mode my-claude
 
 # 停止会话
 terminalcp stop my-app
@@ -524,13 +520,13 @@ MCP 服务器暴露一个名为 `terminalcp` 的工具，接受不同 action 类
 
 | Action | 参数 | 返回值 |
 |--------|------|--------|
-| `start` | `command`, `cwd?`, `name?` | 会话 ID 字符串 |
+| `start` | `command`, `cwd?`, `name?`, `is_claude?` | 会话 ID 字符串 |
 | `stop` | `id?`（省略则停止所有） | 确认消息 |
 | `stdout` | `id`, `lines?` | 渲染后的终端屏幕 |
 | `stream` | `id`, `since_last?`, `strip_ansi?` | 原始输出文本 |
 | `stdin` | `id`, `data` | 空字符串 |
-| `list` | — | 换行分隔的会话列表 |
-| `status` | `id` | 包含执行状态的 JSON（Claude Code CLI） |
+| `list` | `claude_only?` | 换行分隔的会话列表 |
+| `claude-status` | `id`, `mode?` | 状态或模式字符串 |
 | `term-size` | `id` | "rows cols scrollback_lines" |
 | `kill-server` | — | "shutting down" |
 

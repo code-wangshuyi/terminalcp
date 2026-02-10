@@ -21,6 +21,7 @@ _terminalcp() {
     'term-size:Get terminal size'
     'completion:Install shell completion'
     'version:Show client and server versions'
+    'status:Get Claude session state or mode'
     'kill-server:Shutdown the terminal server'
   )
 
@@ -38,13 +39,22 @@ _terminalcp() {
       local cmd=$words[1]
       case $cmd in
         list|ls)
-          _arguments '--ids[Only show session ids]'
+          _arguments \
+            '--ids[Only show session ids]' \
+            '--claude[Only show Claude sessions]'
           ;;
         start)
           _arguments \
             '1:session-id:' \
+            '--claude[Mark as Claude session]' \
             '2:command:' \
             '*:args:'
+          ;;
+        status)
+          _arguments \
+            '--claude[Query Claude session]' \
+            '--mode[Query prompt mode instead of state]' \
+            '1:session:_terminalcp_sessions'
           ;;
         stop)
           _arguments '1:session:_terminalcp_sessions'

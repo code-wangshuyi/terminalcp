@@ -18,7 +18,7 @@ _terminalcp() {
         cword=$COMP_CWORD
     fi
 
-    local commands="list ls start stop attach stdout stream stdin resize term-size completion version kill-server"
+    local commands="list ls start stop attach stdout stream stdin resize term-size status completion version kill-server"
     local global_opts="--mcp --server"
 
     # First argument: command or global option
@@ -32,14 +32,22 @@ _terminalcp() {
     case "$cmd" in
         list|ls)
             if [[ $cword -eq 2 ]]; then
-                COMPREPLY=($(compgen -W "--ids" -- "$cur"))
+                COMPREPLY=($(compgen -W "--ids --claude" -- "$cur"))
+            else
+                COMPREPLY=($(compgen -W "--ids --claude" -- "$cur"))
             fi
             ;;
         version|kill-server)
             # No further arguments
             ;;
         start)
-            # start <session-id> <command> — no completions (user-defined)
+            # start <session-id> [--claude] <command>
+            COMPREPLY=($(compgen -W "--claude" -- "$cur"))
+            ;;
+        status)
+            local sessions
+            sessions=$(_terminalcp_sessions)
+            COMPREPLY=($(compgen -W "--claude --mode $sessions" -- "$cur"))
             ;;
         stop|attach|term-size)
             if [[ $cword -eq 2 ]]; then

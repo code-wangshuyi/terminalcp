@@ -125,9 +125,10 @@ class TerminalServer:
                 command = args.get("command")
                 cwd = args.get("cwd")
                 name = args.get("name")
+                is_claude = args.get("is_claude")
                 if not command:
                     raise RuntimeError("Missing required field: command")
-                session_id = await self.process_manager.start(command, {"cwd": cwd, "name": name})
+                session_id = await self.process_manager.start(command, {"cwd": cwd, "name": name, "is_claude": is_claude})
                 self.process_manager.on_output(session_id, self._make_output_handler())
 
                 self.session_subscribers.setdefault(session_id, set()).add(client_id)
@@ -176,8 +177,13 @@ class TerminalServer:
 
             elif action == "list":
                 processes = self.process_manager.list_processes()
+                claude_only = bool(args.get("claude_only"))
+                if claude_only:
+                    processes = [p for p in processes if p.get("is_claude")]
                 lines = [
-                    f"{proc['id']} {'running' if proc['running'] else 'stopped'} {proc['cwd']} {proc['command']}"
+                    f"{proc['id']} {'running' if proc['running'] else 'stopped'}"
+                    f" {'claude' if proc.get('is_claude') else '-'}"
+                    f" {proc['cwd']} {proc['command']}"
                     for proc in processes
                 ]
                 result = "\n".join(lines)
@@ -236,6 +242,18 @@ class TerminalServer:
 
             elif action == "version":
                 result = get_package_version()
+
+            elif action == "claude-status":
+                session_id = args.get("id")
+                if not session_id:
+                    raise RuntimeError("Missing required field: id")
+                query_mode = bool(args.get("mode"))
+                if query_mode:
+                    mode = await self.process_manager.get_claude_mode(session_id)
+                    result = mode
+                else:
+                    state, detail = await self.process_manager.get_claude_status(session_id)
+                    result = f"{state}: {detail}" if detail else state
 
             else:
                 raise RuntimeError(f"Unknown action: {action}")

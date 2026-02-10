@@ -4,7 +4,7 @@ function __terminalcp_sessions
     terminalcp list --ids 2>/dev/null
 end
 
-set -l commands list ls start stop attach stdout stream stdin resize term-size completion version kill-server
+set -l commands list ls start stop attach stdout stream stdin resize term-size status completion version kill-server
 
 # Disable file completions by default
 complete -c terminalcp -f
@@ -26,15 +26,24 @@ complete -c terminalcp -n "not __fish_seen_subcommand_from $commands" -a resize 
 complete -c terminalcp -n "not __fish_seen_subcommand_from $commands" -a term-size -d "Get terminal size"
 complete -c terminalcp -n "not __fish_seen_subcommand_from $commands" -a completion -d "Install shell completion"
 complete -c terminalcp -n "not __fish_seen_subcommand_from $commands" -a version -d "Show client and server versions"
+complete -c terminalcp -n "not __fish_seen_subcommand_from $commands" -a status -d "Get Claude session state or mode"
 complete -c terminalcp -n "not __fish_seen_subcommand_from $commands" -a kill-server -d "Shutdown the terminal server"
 
 # Session-based completions
-for cmd in stop attach stdout stream stdin resize term-size
+for cmd in stop attach stdout stream stdin resize term-size status
     complete -c terminalcp -n "__fish_seen_subcommand_from $cmd" -a "(__terminalcp_sessions)" -d "Session"
 end
 
 # List options
 complete -c terminalcp -n "__fish_seen_subcommand_from list ls" -l ids -d "Only show session ids"
+complete -c terminalcp -n "__fish_seen_subcommand_from list ls" -l claude -d "Only show Claude sessions"
+
+# Start options
+complete -c terminalcp -n "__fish_seen_subcommand_from start" -l claude -d "Mark as Claude session"
+
+# Status options
+complete -c terminalcp -n "__fish_seen_subcommand_from status" -l claude -d "Query Claude session"
+complete -c terminalcp -n "__fish_seen_subcommand_from status" -l mode -d "Query prompt mode instead of state"
 
 # Stream options
 complete -c terminalcp -n "__fish_seen_subcommand_from stream" -l since-last -d "Only show new output"

@@ -30,9 +30,10 @@ USAGE:
   terminalcp <command> [options]         Run a CLI command
 
 COMMANDS:
-  list, ls [--ids]                       List all active sessions
-  start <id> <command>                   Start a new named session
+  list, ls [--ids] [--claude]            List all active sessions
+  start <id> [--claude] <command>        Start a new named session
   stop [id]                              Stop session(s) (all if no id given)
+  status --claude [--mode] <id>          Get Claude session state or mode
   attach <id>                            Attach to a session interactively
   stdout <id> [lines]                    Get terminal output (rendered view)
   stream <id> [opts]                     Get raw output stream
@@ -72,6 +73,8 @@ EXAMPLES:
 OPTIONS:
   --mcp                                  Run as MCP server on stdio
   --server                               Run as terminal server daemon
+  --claude                               Mark as Claude session (start) or filter (list)
+  --mode                                 Query prompt mode instead of state (status)
   --since-last                           Only show new output (stream)
   --with-ansi                            Keep ANSI codes (stream)
 
@@ -126,11 +129,14 @@ def main() -> None:
 
     if command in {"ls", "list"}:
         list_ids_only = False
+        claude_only = False
         for arg in args[1:]:
             if arg == "--ids":
                 list_ids_only = True
+            elif arg == "--claude":
+                claude_only = True
             elif arg in {"-h", "--help"}:
-                print("Usage: terminalcp list [--ids]")
+                print("Usage: terminalcp list [--ids] [--claude]")
                 return
             else:
                 print(f"Unknown option for list: {arg}", file=sys.stderr)
@@ -138,7 +144,10 @@ def main() -> None:
         async def _list() -> None:
             client = TerminalClient()
             try:
-                response = await client.request({"action": "list"})
+                request_args: dict = {"action": "list"}
+                if claude_only:
+                    request_args["claude_only"] = True
+                response = await client.request(request_args)
             except Exception as exc:
                 if str(exc) == "No server running":
                     if not list_ids_only:
@@ -164,9 +173,13 @@ def main() -> None:
                 parts = line.split(" ")
                 session_id = parts[0]
                 status = parts[1] if len(parts) > 1 else "unknown"
-                cwd = parts[2] if len(parts) > 2 else ""
-                command_text = " ".join(parts[3:]) if len(parts) > 3 else ""
-                print(f"  {session_id}")
+                is_claude_flag = parts[2] if len(parts) > 2 else "-"
+                cwd = parts[3] if len(parts) > 3 else ""
+                command_text = " ".join(parts[4:]) if len(parts) > 4 else ""
+                label = f"  {session_id}"
+                if is_claude_flag == "claude":
+                    label += " [Claude]"
+                print(label)
                 print(f"    Status: {status}")
                 print(f"    CWD: {cwd}")
                 print(f"    Command: {command_text}")
@@ -176,16 +189,22 @@ def main() -> None:
         return
 
     if command == "start":
-        if len(args) < 3:
-            print("Usage: terminalcp start <session-id> <command> [args...]", file=sys.stderr)
+        start_args = args[1:]
+        is_claude = "--claude" in start_args
+        start_args = [a for a in start_args if a != "--claude"]
+        if len(start_args) < 2:
+            print("Usage: terminalcp start <session-id> [--claude] <command> [args...]", file=sys.stderr)
             raise SystemExit(1)
-        session_id = args[1]
-        command_text = " ".join(args[2:])
+        session_id = start_args[0]
+        command_text = " ".join(start_args[1:])
 
         async def _start() -> None:
             client = TerminalClient()
             try:
-                result = await client.request({"action": "start", "command": command_text, "name": session_id, "cwd": os.getcwd()})
+                request_args: dict = {"action": "start", "command": command_text, "name": session_id, "cwd": os.getcwd()}
+                if is_claude:
+                    request_args["is_claude"] = True
+                result = await client.request(request_args)
             except Exception as exc:
                 print(f"Failed to start session: {exc}", file=sys.stderr)
                 raise SystemExit(1)
@@ -207,6 +226,31 @@ def main() -> None:
             print(result)
 
         asyncio.run(_stop())
+        return
+
+    if command == "status":
+        status_args = args[1:]
+        if "--claude" not in status_args:
+            print("Usage: terminalcp status --claude [--mode] <session-id>", file=sys.stderr)
+            raise SystemExit(1)
+        status_args = [a for a in status_args if a != "--claude"]
+        query_mode = "--mode" in status_args
+        status_args = [a for a in status_args if a != "--mode"]
+        if not status_args:
+            print("Usage: terminalcp status --claude [--mode] <session-id>", file=sys.stderr)
+            raise SystemExit(1)
+        session_id = status_args[0]
+
+        async def _status() -> None:
+            client = TerminalClient()
+            try:
+                result = await client.request({"action": "claude-status", "id": session_id, "mode": query_mode})
+            except Exception as exc:
+                print(f"Failed to get status: {exc}", file=sys.stderr)
+                raise SystemExit(1)
+            print(result)
+
+        asyncio.run(_status())
         return
 
     if command == "stdout":

@@ -15,6 +15,7 @@ from typing import Callable, Dict, Optional
 import pyte
 
 from .ansi import strip_ansi
+from .claude_status import detect_claude_mode, detect_claude_state
 
 
 @dataclass
@@ -36,6 +37,7 @@ class ManagedTerminal:
     cols: int = 80
     rows: int = 24
     use_byte_stream: bool = False
+    is_claude: bool = False
 
 
 class TerminalManager:
@@ -46,6 +48,7 @@ class TerminalManager:
     async def start(self, command: str, options: Optional[Dict[str, str]] = None) -> str:
         options = options or {}
         session_id = options.get("name") or f"proc-{secrets.token_hex(6)}"
+        is_claude = bool(options.get("is_claude"))
         if session_id in self._processes:
             raise RuntimeError(f"Session '{session_id}' already exists")
 
@@ -108,6 +111,7 @@ class TerminalManager:
             cols=cols,
             rows=rows,
             use_byte_stream=use_byte_stream,
+            is_claude=is_claude,
         )
         self._processes[session_id] = managed
 
@@ -245,9 +249,18 @@ class TerminalManager:
                 "started_at": proc.started_at,
                 "running": proc.running,
                 "pid": proc.process.pid,
+                "is_claude": proc.is_claude,
             }
             for proc in self._processes.values()
         ]
+
+    async def get_claude_status(self, session_id: str) -> tuple[str, str]:
+        output = await self.get_output(session_id, lines=10)
+        return detect_claude_state(output)
+
+    async def get_claude_mode(self, session_id: str) -> str:
+        output = await self.get_output(session_id, lines=10)
+        return detect_claude_mode(output)
 
     def get_process(self, session_id: str) -> Optional[ManagedTerminal]:
         return self._processes.get(session_id)

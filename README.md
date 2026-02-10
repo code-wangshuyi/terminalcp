@@ -117,6 +117,10 @@ The following examples show the JSON arguments passed to the single `terminalcp`
 // Start in specific directory
 {"action": "start", "command": "python3 script.py", "cwd": "/path/to/project", "name": "analyzer"}
 // Returns: "analyzer"
+
+// Start a Claude Code session (marked for status monitoring)
+{"action": "start", "command": "claude", "name": "my-claude", "is_claude": true}
+// Returns: "my-claude"
 ```
 
 ### Interacting with Running Sessions
@@ -159,7 +163,10 @@ The following examples show the JSON arguments passed to the single `terminalcp`
 ```json
 // List all sessions
 {"action": "list"}
-// Returns: "dev-server running /Users/you/project npm run dev\nanalyzer stopped /path python3 script.py"
+// Returns: "dev-server running - /Users/you/project npm run dev\nmy-claude running claude /path claude"
+
+// List only Claude sessions
+{"action": "list", "claude_only": true}
 
 // Stop specific process
 {"action": "stop", "id": "dev-server"}
@@ -174,58 +181,35 @@ The following examples show the JSON arguments passed to the single `terminalcp`
 // Returns: "shutting down"
 ```
 
-### Status Monitoring (Claude Code CLI)
-
-Monitor the execution state of Claude Code CLI sessions in real-time:
+### Claude Code Status Monitoring
 
 ```json
-// Get current execution status
-{"action": "status", "id": "claude"}
-// Returns: JSON with terminal_state, task_status, timing, and interaction details
+// Get Claude session state (processing/interactive/completed/idle)
+{"action": "claude-status", "id": "my-claude"}
+// Returns: "processing: Brewing" or "interactive: Should I proceed?" or "completed: Brewed" or "idle"
+
+// Get Claude session prompt mode (plan/accept-edits/default)
+{"action": "claude-status", "id": "my-claude", "mode": true}
+// Returns: "plan" or "accept-edits" or "default"
 ```
 
-**Response Structure:**
-
-```json
-{
-  "terminal_state": "interactive",           // running | interactive | completed
-  "task_status": "waiting_for_input",        // pending | running | waiting_for_input | completed | failed
-  "stable_count": 3,                         // Output stability counter
-  "detail": {
-    "description": "Waiting for permission confirmation",
-    "interaction_type": "permission_confirm", // Type of interaction detected
-    "choices": ["Yes", "No"]                  // Available response options
-  },
-  "timing": {
-    "started_at": "2026-02-09T10:30:00Z",
-    "completed_at": null,
-    "duration_seconds": null
-  }
-}
-```
-
-**Interaction Types:**
-- `permission_confirm` - Tool permission requests ("Allow tool X?")
-- `highlighted_option` - Menu with highlighted selection (❯)
-- `plan_approval` - Action plan confirmation ("Proceed?")
-- `user_question` - General questions ("Do you want to...")
-- `selection_menu` - Numbered or bulleted option lists
-
-**Use Cases:**
-- Detect when Claude Code needs user input
-- Automatically respond to permission prompts
-- Monitor task progress and completion
-- Build orchestration systems that coordinate multiple AI agents
-- Implement retry logic based on execution state
 
 ### Interactive AI Agents Example
 
 ```json
-// Start Claude with a name
-{"action": "start", "command": "/path/to/claude --dangerously-skip-permissions", "name": "claude"}
+// Start Claude as a monitored session
+{"action": "start", "command": "claude --dangerously-skip-permissions", "name": "claude", "is_claude": true}
 
 // Send a prompt
 {"action": "stdin", "id": "claude", "data": "Write a test for main.py\r"}
+
+// Check Claude's current state
+{"action": "claude-status", "id": "claude"}
+// Returns: "processing: Thinking" or "interactive: Should I proceed?" or "completed: Brewed" or "idle"
+
+// Check Claude's prompt mode
+{"action": "claude-status", "id": "claude", "mode": true}
+// Returns: "plan" or "accept-edits" or "default"
 
 // Get the response
 {"action": "stdout", "id": "claude"}
@@ -263,8 +247,14 @@ terminalcp can also be used as a standalone CLI tool:
 # List all active sessions
 terminalcp ls
 
+# List only Claude sessions
+terminalcp list --claude
+
 # Start a new session with a custom name
 terminalcp start my-app "npm run dev"
+
+# Start a Claude session (marked for status monitoring)
+terminalcp start my-claude --claude "claude"
 
 # Attach to a session interactively (Ctrl+B to detach)
 terminalcp attach my-app
@@ -291,6 +281,12 @@ terminalcp resize my-app 120 40
 
 # Get terminal size
 terminalcp term-size my-app
+
+# Check Claude session state (processing/interactive/completed/idle)
+terminalcp status --claude my-claude
+
+# Check Claude prompt mode (plan/accept-edits/default)
+terminalcp status --claude --mode my-claude
 
 # Stop sessions
 terminalcp stop my-app
@@ -560,13 +556,13 @@ The MCP server exposes a single tool called `terminalcp` that accepts JSON comma
 
 | Action | Parameters | Returns |
 |--------|-----------|---------|
-| `start` | `command`, `cwd?`, `name?` | Session ID string |
+| `start` | `command`, `cwd?`, `name?`, `is_claude?` | Session ID string |
 | `stop` | `id?` (omit to stop all) | Confirmation message |
 | `stdout` | `id`, `lines?` | Rendered terminal screen |
 | `stream` | `id`, `since_last?`, `strip_ansi?` | Raw output text |
 | `stdin` | `id`, `data` | Empty string |
-| `list` | — | Newline-separated session list |
-| `status` | `id` | JSON with execution state (Claude Code CLI) |
+| `list` | `claude_only?` | Newline-separated session list |
+| `claude-status` | `id`, `mode?` | State or mode string |
 | `term-size` | `id` | "rows cols scrollback_lines" |
 | `kill-server` | — | "shutting down" |
 

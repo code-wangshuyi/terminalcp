@@ -231,20 +231,25 @@ def main() -> None:
     if command == "status":
         status_args = args[1:]
         if "--claude" not in status_args:
-            print("Usage: terminalcp status --claude [--mode] <session-id>", file=sys.stderr)
+            print("Usage: terminalcp status --claude [--mode] [--raw] <session-id>", file=sys.stderr)
             raise SystemExit(1)
         status_args = [a for a in status_args if a != "--claude"]
         query_mode = "--mode" in status_args
         status_args = [a for a in status_args if a != "--mode"]
+        raw_display = "--raw" in status_args
+        status_args = [a for a in status_args if a != "--raw"]
         if not status_args:
-            print("Usage: terminalcp status --claude [--mode] <session-id>", file=sys.stderr)
+            print("Usage: terminalcp status --claude [--mode] [--raw] <session-id>", file=sys.stderr)
             raise SystemExit(1)
         session_id = status_args[0]
 
         async def _status() -> None:
             client = TerminalClient()
             try:
-                result = await client.request({"action": "claude-status", "id": session_id, "mode": query_mode})
+                if raw_display:
+                    result = await client.request({"action": "raw-display", "id": session_id})
+                else:
+                    result = await client.request({"action": "claude-status", "id": session_id, "mode": query_mode})
             except Exception as exc:
                 print(f"Failed to get status: {exc}", file=sys.stderr)
                 raise SystemExit(1)

@@ -1,4 +1,4 @@
-"""Shell type detection logic."""
+"""Shell 类型检测逻辑。"""
 from __future__ import annotations
 
 import os
@@ -10,14 +10,14 @@ _SUPPORTED_SHELLS = {"bash", "zsh", "fish"}
 
 
 def detect_shell() -> str:
-    """Detect the current user's shell.
+    """检测当前用户的 Shell。
 
-    Strategy (ordered by reliability):
-    1. ``$SHELL`` environment variable (user's configured login shell)
-    2. Parent process name via ``ps``
-    3. Default to ``bash``
+    策略（按可靠性排序）：
+    1. ``$SHELL`` 环境变量（用户配置的登录 Shell）
+    2. 通过 ``ps`` 获取父进程名称
+    3. 默认为 ``bash``
 
-    Returns one of: ``"bash"``, ``"zsh"``, ``"fish"``
+    返回以下之一：``"bash"``、``"zsh"``、``"fish"``
     """
     shell_env = os.environ.get("SHELL", "")
     name = _extract_shell_name(shell_env)
@@ -32,7 +32,7 @@ def detect_shell() -> str:
 
 
 def _extract_shell_name(shell_path: str) -> Optional[str]:
-    """Extract a recognised shell name from a path like ``/bin/zsh``."""
+    """从类似 ``/bin/zsh`` 的路径中提取已识别的 Shell 名称。"""
     if not shell_path:
         return None
     basename = Path(shell_path).name.lstrip("-")
@@ -42,7 +42,7 @@ def _extract_shell_name(shell_path: str) -> Optional[str]:
 
 
 def _detect_from_parent_process() -> Optional[str]:
-    """Try to detect the shell from the parent process (macOS / Linux)."""
+    """尝试从父进程检测 Shell 类型（macOS / Linux）。"""
     try:
         import subprocess
 

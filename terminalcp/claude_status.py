@@ -1,24 +1,31 @@
 from __future__ import annotations
 
+import re
 from typing import Tuple
 
-# Spinner characters used by Claude Code CLI during processing
+# Claude Code CLI 处理过程中使用的旋转字符
 SPINNER_CHARS = frozenset("·✢✳✶✻✽")
 
-# Words displayed when a task completes
+# 匹配行首旋转字符的正则表达式（允许前导空白）
+_SPINNER_RE = re.compile(r"^\s*([·✢✳✶✻✽])\s+(.*)", re.MULTILINE)
+
+# 任务完成时显示的词语
 COMPLETED_WORDS = frozenset({
     "Baked", "Brewed", "Churned", "Cogitated",
     "Cooked", "Crunched", "Sautéed", "Worked",
 })
 
-# Interactive prompts that indicate Claude is waiting for user input
+# 表示 Claude 正在等待用户输入的交互式提示
 INTERACTIVE_PROMPTS = (
     "Should I proceed?",
     "Do you want to proceed?",
     "Would you like to proceed?",
+    "Would you like to proceed with this plan?",
+    "Proceed with this plan?",
+    "Ready to submit your answers?",
 )
 
-# All processing words from Claude Code CLI
+# Claude Code CLI 所有处理中的状态词
 PROCESSING_WORDS = frozenset({
     "Accomplishing", "Actioning", "Actualizing", "Adding", "Architecting",
     "Baking", "Beaming", "Beboppin'", "Befuddling", "Billowing", "Blanching",
@@ -62,73 +69,67 @@ PROCESSING_WORDS = frozenset({
 
 
 def detect_claude_state(output: str) -> Tuple[str, str]:
-    """Detect Claude Code CLI interaction state from rendered terminal output.
+    """从渲染后的终端输出中检测 Claude Code CLI 的交互状态。
 
-    Returns:
-        (state, detail) where state is one of:
-        - "interactive": waiting for user confirmation
-        - "completed": task finished
-        - "processing": actively working
-        - "idle": none of the above
+    从下往上扫描整个可见屏幕以查找状态指示符。
+
+    返回:
+        (state, detail)，其中 state 为以下之一：
+        - "interactive": 等待用户确认
+        - "completed": 任务已完成
+        - "processing": 正在执行中
+        - "idle": 以上都不是
     """
     if not output:
         return ("idle", "")
 
     lines = output.split("\n")
 
-    # Remove trailing blank lines
-    while lines and not lines[-1].strip():
-        lines.pop()
-
-    if not lines:
-        return ("idle", "")
-
-    # 1. Check for interactive prompts (last 5 lines)
-    for line in reversed(lines[-5:]):
+    # 1. 检查交互式提示（从下往上扫描所有行）
+    for line in reversed(lines):
         stripped = line.strip()
+        if not stripped:
+            continue
         for prompt in INTERACTIVE_PROMPTS:
             if prompt in stripped:
                 return ("interactive", prompt)
 
-    # 2. Check for completed state (last 3 lines)
-    for line in reversed(lines[-3:]):
-        stripped = line.strip()
-        if not stripped:
-            continue
-        if stripped[0] == "✻":
-            rest = stripped[1:].strip()
-            if rest in COMPLETED_WORDS:
-                return ("completed", rest)
-
-    # 3. Check for processing state (last 3 lines)
-    for line in reversed(lines[-3:]):
-        stripped = line.strip()
-        if not stripped:
-            continue
-        if stripped[0] in SPINNER_CHARS:
-            rest = stripped[1:].strip()
-            if rest:
-                # Could be a processing word or a system status message
-                first_word = rest.split()[0] if rest.split() else ""
-                if first_word in PROCESSING_WORDS or rest.endswith("…"):
-                    return ("processing", rest)
+    # 2. 检查旋转字符行（从下往上扫描所有行）
+    #    旋转字符表示处理中或已完成状态
+    for line in reversed(lines):
+        m = _SPINNER_RE.match(line)
+        if m:
+            rest = m.group(2).strip()
+            if not rest:
+                continue
+            first_word = rest.split()[0] if rest.split() else ""
+            # 已完成状态：✻ 后跟完成词
+            if first_word in COMPLETED_WORDS:
+                return ("completed", first_word)
+            # 处理中状态：已知词语或系统状态消息
+            if first_word in PROCESSING_WORDS:
+                return ("processing", rest)
+            if rest.endswith("…") or rest.endswith("..."):
+                return ("processing", rest)
+            # 旋转字符后跟未知文本——仍可能是处理中
+            return ("processing", rest)
 
     return ("idle", "")
 
 
 def detect_claude_mode(output: str) -> str:
-    """Detect Claude Code CLI prompt mode from rendered terminal output.
+    """从渲染后的终端输出中检测 Claude Code CLI 的提示模式。
 
-    Returns:
-        "plan", "accept-edits", or "default"
+    返回:
+        "plan"、"accept-edits" 或 "default"
     """
     if not output:
         return "default"
 
     lines = output.split("\n")
 
-    # Scan last 10 lines for mode indicators
-    for line in lines[-10:]:
+    # 扫描所有行以查找模式指示符
+    for line in lines:
         if "⏸" in line and "plan" in line.lower():
             return "plan"
         if "⏵⏵" in line and "accept" in line.lower():

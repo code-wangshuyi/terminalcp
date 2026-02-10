@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Iterable, List
 
 SPECIAL_KEYS = {
-    # Navigation keys
+    # 导航键
     "Up": "\x1b[A",
     "Down": "\x1b[B",
     "Left": "\x1b[D",
@@ -11,7 +11,7 @@ SPECIAL_KEYS = {
     "Home": "\x1b[H",
     "End": "\x1b[F",
 
-    # Page navigation
+    # 翻页键
     "PageUp": "\x1b[5~",
     "PageDown": "\x1b[6~",
     "PgUp": "\x1b[5~",
@@ -19,13 +19,13 @@ SPECIAL_KEYS = {
     "PPage": "\x1b[5~",
     "NPage": "\x1b[6~",
 
-    # Editing keys
+    # 编辑键
     "Insert": "\x1b[2~",
     "Delete": "\x1b[3~",
     "IC": "\x1b[2~",
     "DC": "\x1b[3~",
 
-    # Special characters
+    # 特殊字符
     "Enter": "\r",
     "Tab": "\t",
     "BTab": "\x1b[Z",
@@ -35,7 +35,7 @@ SPECIAL_KEYS = {
     "BSpace": "\x7f",
     "Backspace": "\x7f",
 
-    # Function keys
+    # 功能键
     "F1": "\x1bOP",
     "F2": "\x1bOQ",
     "F3": "\x1bOR",
@@ -49,7 +49,7 @@ SPECIAL_KEYS = {
     "F11": "\x1b[23~",
     "F12": "\x1b[24~",
 
-    # Keypad keys
+    # 小键盘键
     "KP0": "\x1bOp",
     "KP1": "\x1bOq",
     "KP2": "\x1bOr",

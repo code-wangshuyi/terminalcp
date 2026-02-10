@@ -1,8 +1,8 @@
 """
-Property-based tests for status_detector.
+status_detector 的基于属性的测试。
 
-These tests verify universal properties that should hold across all valid
-executions of the status monitoring system.
+这些测试验证在状态监控系统的所有有效执行中
+应成立的通用属性。
 """
 
 import pytest
@@ -20,10 +20,10 @@ from terminalcp.status_detector import (
 )
 
 
-# Custom strategies for generating test data
+# 用于生成测试数据的自定义策略
 @st.composite
 def terminal_state_strategy(draw):
-    """Generate a valid TerminalState."""
+    """生成有效的 TerminalState。"""
     return draw(st.sampled_from([
         TerminalState.RUNNING,
         TerminalState.INTERACTIVE,
@@ -33,7 +33,7 @@ def terminal_state_strategy(draw):
 
 @st.composite
 def task_status_strategy(draw):
-    """Generate a valid TaskStatus."""
+    """生成有效的 TaskStatus。"""
     return draw(st.sampled_from([
         TaskStatus.PENDING,
         TaskStatus.RUNNING,
@@ -45,7 +45,7 @@ def task_status_strategy(draw):
 
 @st.composite
 def interaction_type_strategy(draw):
-    """Generate a valid InteractionType or None."""
+    """生成有效的 InteractionType 或 None。"""
     return draw(st.one_of(
         st.none(),
         st.sampled_from([
@@ -60,7 +60,7 @@ def interaction_type_strategy(draw):
 
 @st.composite
 def datetime_strategy(draw):
-    """Generate a valid datetime with timezone or None."""
+    """生成带时区的有效 datetime 或 None。"""
     choice = draw(st.one_of(
         st.none(),
         st.datetimes(
@@ -68,7 +68,7 @@ def datetime_strategy(draw):
             max_value=datetime(2030, 12, 31)
         )
     ))
-    # Add timezone to datetime if not None
+    # 如果不为 None，为 datetime 添加时区
     if choice is not None:
         return choice.replace(tzinfo=timezone.utc)
     return choice
@@ -76,7 +76,7 @@ def datetime_strategy(draw):
 
 @st.composite
 def session_state_strategy(draw):
-    """Generate a valid SessionState."""
+    """生成有效的 SessionState。"""
     session_id = draw(st.text(min_size=1, max_size=50))
     terminal_state = draw(terminal_state_strategy())
     task_status = draw(task_status_strategy())
@@ -88,9 +88,9 @@ def session_state_strategy(draw):
         st.lists(st.text(min_size=1, max_size=20), min_size=1, max_size=10)
     ))
     started_at = draw(datetime_strategy())
-    # Ensure completed_at is after started_at if both exist
+    # 确保两者都存在时 completed_at 在 started_at 之后
     if started_at is not None:
-        # Generate a timedelta to add to started_at
+        # 生成添加到 started_at 的时间增量
         delta_seconds = draw(st.integers(min_value=0, max_value=86400))  # 0 to 1 day
         completed_at = draw(st.one_of(
             st.none(),
@@ -117,26 +117,26 @@ def session_state_strategy(draw):
     )
 
 
-# Feature: claude-code-status-monitoring, Property 2: State Value Validity
+# 功能：claude-code-status-monitoring，属性 2：状态值有效性
 @given(session_state=session_state_strategy())
 @settings(max_examples=100)
 def test_property_state_value_validity(session_state):
     """
-    **Validates: Requirements 6.1, 7.1**
-    
-    Property 2: State Value Validity
-    For any session state at any point in time, terminal_state should be one of
-    (running, interactive, completed) and task_status should be one of
-    (pending, running, waiting_for_input, completed, failed).
+    **验证需求：6.1, 7.1**
+
+    属性 2：状态值有效性
+    对于任意时间点的任何会话状态，terminal_state 应为
+    (running, interactive, completed) 之一，task_status 应为
+    (pending, running, waiting_for_input, completed, failed) 之一。
     """
-    # Verify terminal_state is valid
+    # 验证 terminal_state 有效
     assert session_state.terminal_state in [
         TerminalState.RUNNING,
         TerminalState.INTERACTIVE,
         TerminalState.COMPLETED
     ], f"Invalid terminal_state: {session_state.terminal_state}"
-    
-    # Verify task_status is valid
+
+    # 验证 task_status 有效
     assert session_state.task_status in [
         TaskStatus.PENDING,
         TaskStatus.RUNNING,
@@ -144,12 +144,12 @@ def test_property_state_value_validity(session_state):
         TaskStatus.COMPLETED,
         TaskStatus.FAILED
     ], f"Invalid task_status: {session_state.task_status}"
-    
-    # Verify enum values are strings
+
+    # 验证枚举值为字符串
     assert isinstance(session_state.terminal_state.value, str)
     assert isinstance(session_state.task_status.value, str)
-    
-    # Verify the values match expected strings
+
+    # 验证值与预期字符串匹配
     valid_terminal_values = {"running", "interactive", "completed"}
     valid_task_values = {"pending", "running", "waiting_for_input", "completed", "failed"}
     
@@ -157,38 +157,38 @@ def test_property_state_value_validity(session_state):
     assert session_state.task_status.value in valid_task_values
 
 
-# Feature: claude-code-status-monitoring, Property 1: Response Structure Completeness
+# 功能：claude-code-status-monitoring，属性 1：响应结构完整性
 @given(session_state=session_state_strategy())
 @settings(max_examples=100)
 def test_property_response_structure_completeness(session_state):
     """
-    **Validates: Requirements 1.1, 3.5, 6.5, 7.7, 8.5, 9.1, 9.2, 9.3, 9.4, 9.6**
-    
-    Property 1: Response Structure Completeness
-    For any valid session state, the status response should contain all required
-    fields (terminal_state, task_status, stable_count, detail with
-    description/interaction_type/choices, and timing with
-    started_at/completed_at/duration_seconds) with appropriate types and valid
-    JSON serialization.
+    **验证需求：1.1, 3.5, 6.5, 7.7, 8.5, 9.1, 9.2, 9.3, 9.4, 9.6**
+
+    属性 1：响应结构完整性
+    对于任何有效的会话状态，状态响应应包含所有必需字段
+    （terminal_state、task_status、stable_count、带有
+    description/interaction_type/choices 的 detail，以及带有
+    started_at/completed_at/duration_seconds 的 timing），
+    具有适当的类型和有效的 JSON 序列化。
     """
-    # Convert session state to status response
+    # 将会话状态转换为状态响应
     response = session_state.to_status_response()
-    
-    # Verify all required fields exist
+
+    # 验证所有必需字段存在
     assert hasattr(response, 'terminal_state')
     assert hasattr(response, 'task_status')
     assert hasattr(response, 'stable_count')
     assert hasattr(response, 'detail')
     assert hasattr(response, 'timing')
     
-    # Verify terminal_state is valid
+    # 验证 terminal_state 有效
     assert response.terminal_state in [
         TerminalState.RUNNING,
         TerminalState.INTERACTIVE,
         TerminalState.COMPLETED
     ]
-    
-    # Verify task_status is valid
+
+    # 验证 task_status 有效
     assert response.task_status in [
         TaskStatus.PENDING,
         TaskStatus.RUNNING,
@@ -196,93 +196,93 @@ def test_property_response_structure_completeness(session_state):
         TaskStatus.COMPLETED,
         TaskStatus.FAILED
     ]
-    
-    # Verify stable_count is an integer
+
+    # 验证 stable_count 为整数
     assert isinstance(response.stable_count, int)
     assert response.stable_count >= 0
     
-    # Verify detail structure
+    # 验证 detail 结构
     assert isinstance(response.detail, StatusDetail)
     assert isinstance(response.detail.description, str)
     assert len(response.detail.description) > 0
     assert response.detail.interaction_type is None or isinstance(response.detail.interaction_type, str)
     assert response.detail.choices is None or isinstance(response.detail.choices, list)
     
-    # Verify timing structure
+    # 验证 timing 结构
     assert isinstance(response.timing, TimingInfo)
     assert response.timing.started_at is None or isinstance(response.timing.started_at, str)
     assert response.timing.completed_at is None or isinstance(response.timing.completed_at, str)
     assert response.timing.duration_seconds is None or isinstance(response.timing.duration_seconds, (int, float))
     
-    # Verify JSON serialization works
+    # 验证 JSON 序列化正常
     response_dict = response.to_dict()
     assert isinstance(response_dict, dict)
-    
-    # Verify all required keys in dict
+
+    # 验证字典中的所有必需键
     assert 'terminal_state' in response_dict
     assert 'task_status' in response_dict
     assert 'stable_count' in response_dict
     assert 'detail' in response_dict
     assert 'timing' in response_dict
     
-    # Verify detail dict structure
+    # 验证 detail 字典结构
     assert 'description' in response_dict['detail']
     assert 'interaction_type' in response_dict['detail']
     assert 'choices' in response_dict['detail']
     
-    # Verify timing dict structure
+    # 验证 timing 字典结构
     assert 'started_at' in response_dict['timing']
     assert 'completed_at' in response_dict['timing']
     assert 'duration_seconds' in response_dict['timing']
     
-    # Verify JSON string can be created
+    # 验证可以创建 JSON 字符串
     json_str = response.to_json()
     assert isinstance(json_str, str)
     assert len(json_str) > 0
     
-    # Verify JSON is valid by parsing it
+    # 通过解析验证 JSON 有效
     import json
     parsed = json.loads(json_str)
     assert isinstance(parsed, dict)
 
 
-# Custom strategy for generating text that matches multiple patterns
+# 用于生成匹配多个模式的文本的自定义策略
 @st.composite
 def multi_pattern_text_strategy(draw):
     """
-    Generate text that matches multiple interaction patterns.
-    
-    This strategy creates text that intentionally matches multiple patterns
-    to test priority ordering. We'll create text with specific patterns and
-    track which ones should match.
+    生成匹配多个交互模式的文本。
+
+    此策略创建故意匹配多个模式的文本
+    以测试优先级排序。我们创建带有特定模式的文本并
+    跟踪哪些模式应该匹配。
     """
     from terminalcp.terminal_detector import TerminalDetector
     
-    # Define pattern components that are designed to match specific types
-    # Each tuple is (text, interaction_type, priority)
+    # 定义设计用于匹配特定类型的模式组件
+    # 每个元组为 (text, interaction_type, priority)
     pattern_options = [
-        # Permission confirm patterns (priority 1)
+        # 权限确认模式（优先级 1）
         ("Allow tool file_editor?", InteractionType.PERMISSION_CONFIRM, 1),
         ("Allow tool code_runner?", InteractionType.PERMISSION_CONFIRM, 1),
         
-        # Highlighted option patterns (priority 2)
+        # 高亮选项模式（优先级 2）
         ("❯ Yes\n  No", InteractionType.HIGHLIGHTED_OPTION, 2),
         ("❯ Continue\n  Cancel", InteractionType.HIGHLIGHTED_OPTION, 2),
         
-        # Plan approval patterns (priority 3)
+        # 计划批准模式（优先级 3）
         ("Proceed with this plan?", InteractionType.PLAN_APPROVAL, 3),
         ("Proceed with changes?", InteractionType.PLAN_APPROVAL, 3),
         
-        # User question patterns (priority 4)
+        # 用户问题模式（优先级 4）
         ("Do you want to continue?", InteractionType.USER_QUESTION, 4),
         ("Should I create a backup?", InteractionType.USER_QUESTION, 4),
         
-        # Selection menu patterns (priority 5)
+        # 选择菜单模式（优先级 5）
         ("1. Option One\n2. Option Two\n3. Option Three", InteractionType.SELECTION_MENU, 5),
         ("- First choice\n- Second choice\n- Third choice", InteractionType.SELECTION_MENU, 5),
     ]
     
-    # Choose 2-4 patterns to include
+    # 选择 2-4 个模式包含
     num_patterns = draw(st.integers(min_value=2, max_value=4))
     selected_patterns = draw(st.lists(
         st.sampled_from(pattern_options),
@@ -291,25 +291,25 @@ def multi_pattern_text_strategy(draw):
         unique_by=lambda x: x[1]  # Ensure different interaction types
     ))
     
-    # Build the text by combining patterns
+    # 通过组合模式构建文本
     text_parts = [pattern[0] for pattern in selected_patterns]
     
-    # Shuffle the order
+    # 打乱顺序
     shuffled_parts = draw(st.permutations(text_parts))
     
-    # Join with double newlines to separate patterns clearly
+    # 用双换行符分隔模式以清晰区分
     combined_text = '\n\n'.join(shuffled_parts)
     
-    # Determine the expected type (highest priority = lowest number)
+    # 确定预期类型（最高优先级 = 最小数字）
     priorities = [pattern[2] for pattern in selected_patterns]
     min_priority = min(priorities)
     expected_type = next(pattern[1] for pattern in selected_patterns if pattern[2] == min_priority)
     
-    # Verify that the text actually matches multiple patterns by checking manually
+    # 通过手动检查验证文本确实匹配了多个模式
     detector = TerminalDetector()
     text_lines = combined_text.split('\n')
     
-    # Count how many patterns actually match
+    # 计算实际匹配的模式数量
     matches = []
     if detector._check_permission_confirm(combined_text):
         matches.append(InteractionType.PERMISSION_CONFIRM)
@@ -322,48 +322,48 @@ def multi_pattern_text_strategy(draw):
     if detector._check_selection_menu(combined_text):
         matches.append(InteractionType.SELECTION_MENU)
     
-    # Only use examples where at least 2 patterns match
+    # 仅使用至少匹配 2 个模式的示例
     from hypothesis import assume
     assume(len(matches) >= 2)
     
     return combined_text, expected_type, matches
 
 
-# Feature: claude-code-status-monitoring, Property 5: Interactive Pattern Priority Ordering
+# 功能：claude-code-status-monitoring，属性 5：交互模式优先级排序
 @given(text_expected_matches=multi_pattern_text_strategy())
 @settings(max_examples=100, deadline=None)
 def test_property_interactive_pattern_priority_ordering(text_expected_matches):
     """
-    **Validates: Requirements 4.2**
-    
-    Property 5: Interactive Pattern Priority Ordering
-    For any text that matches multiple interaction patterns, the detected
-    interaction_type should be the one with the highest priority
-    (permission_confirm > highlighted_option > plan_approval > user_question > selection_menu).
+    **验证需求：4.2**
+
+    属性 5：交互模式优先级排序
+    对于任何匹配多个交互模式的文本，检测到的 interaction_type
+    应为优先级最高的模式
+    （permission_confirm > highlighted_option > plan_approval > user_question > selection_menu）。
     """
     from terminalcp.terminal_detector import TerminalDetector
     
     text, expected_type, matching_patterns = text_expected_matches
     
-    # Create detector
+    # 创建检测器
     detector = TerminalDetector()
-    
-    # Split text into lines for detect_interactive
+
+    # 将文本分割为行以用于 detect_interactive
     text_lines = text.split('\n')
-    
-    # Detect interactive pattern
+
+    # 检测交互模式
     result = detector.detect_interactive(text_lines)
-    
-    # Should detect something since we generated text with patterns
+
+    # 应检测到内容因为我们生成了带模式的文本
     assert result is not None, f"Failed to detect any pattern in text: {text}"
-    
-    # The detected type should match the expected highest priority type
+
+    # 检测到的类型应与预期的最高优先级类型匹配
     assert result.interaction_type == expected_type, \
         f"Expected {expected_type.value} (highest priority among {[p.value for p in matching_patterns]}) " \
         f"but got {result.interaction_type.value} for text:\n{text}"
-    
-    # Verify the priority ordering is correct
-    # Priority order: 1=permission_confirm, 2=highlighted_option, 3=plan_approval, 4=user_question, 5=selection_menu
+
+    # 验证优先级排序正确
+    # 优先级顺序：1=permission_confirm, 2=highlighted_option, 3=plan_approval, 4=user_question, 5=selection_menu
     priority_map = {
         InteractionType.PERMISSION_CONFIRM: 1,
         InteractionType.HIGHLIGHTED_OPTION: 2,
@@ -378,7 +378,7 @@ def test_property_interactive_pattern_priority_ordering(text_expected_matches):
     assert detected_priority == expected_priority, \
         f"Priority mismatch: detected priority {detected_priority} != expected priority {expected_priority}"
     
-    # Verify that the detected pattern has the highest priority among all matching patterns
+    # 验证检测到的模式在所有匹配模式中具有最高优先级
     matching_priorities = [priority_map[p] for p in matching_patterns]
     min_matching_priority = min(matching_priorities)
     
@@ -386,19 +386,19 @@ def test_property_interactive_pattern_priority_ordering(text_expected_matches):
         f"Detected priority {detected_priority} is not the highest (lowest number) among matching patterns {matching_priorities}"
 
 
-# Custom strategy for generating text with specific interaction patterns
+# 用于生成特定交互模式文本的自定义策略
 @st.composite
 def interaction_pattern_text_strategy(draw):
     """
-    Generate text that matches a specific interaction pattern with known choices.
-    
-    Returns a tuple of (text, expected_interaction_type, expected_choices).
-    This strategy creates text for each of the 5 interaction types with
-    clearly defined choices that should be extracted.
+    生成匹配特定交互模式的文本及已知选项。
+
+    返回 (text, expected_interaction_type, expected_choices) 元组。
+    此策略为 5 种交互类型中的每一种创建带有
+    明确定义选项的文本，这些选项应被正确提取。
     """
     from terminalcp.terminal_detector import TerminalDetector
     
-    # Choose which interaction type to generate
+    # 选择要生成的交互类型
     interaction_type = draw(st.sampled_from([
         InteractionType.PERMISSION_CONFIRM,
         InteractionType.HIGHLIGHTED_OPTION,
@@ -408,29 +408,29 @@ def interaction_pattern_text_strategy(draw):
     ]))
     
     if interaction_type == InteractionType.PERMISSION_CONFIRM:
-        # Generate permission confirmation patterns
+        # 生成权限确认模式
         tool_name = draw(st.sampled_from(['file_editor', 'code_runner', 'web_search', 'terminal']))
         
-        # Choose format variation
+        # 选择格式变体
         format_choice = draw(st.integers(min_value=0, max_value=2))
         
         if format_choice == 0:
-            # Simple format: "Allow tool X?"
+            # 简单格式："Allow tool X?"
             text = f"Allow tool {tool_name}?"
             expected_choices = ["Yes", "No"]  # Default choices
         elif format_choice == 1:
-            # With explicit Yes/No
+            # 带显式 Yes/No
             text = f"Allow tool {tool_name}?\nYes\nNo"
             expected_choices = ["Yes", "No"]
         else:
-            # With highlighted option
+            # 带高亮选项
             text = f"Allow tool {tool_name}?\n❯ Yes\n  No"
             expected_choices = ["Yes", "No"]
         
         return text, interaction_type, expected_choices
     
     elif interaction_type == InteractionType.HIGHLIGHTED_OPTION:
-        # Generate highlighted option patterns
+        # 生成高亮选项模式
         options = draw(st.lists(
             st.text(alphabet=st.characters(whitelist_categories=('Lu', 'Ll'), min_codepoint=65, max_codepoint=122), min_size=3, max_size=15),
             min_size=2,
@@ -438,10 +438,10 @@ def interaction_pattern_text_strategy(draw):
             unique=True
         ))
         
-        # Pick which option is highlighted
+        # 选择哪个选项被高亮
         highlighted_idx = draw(st.integers(min_value=0, max_value=len(options)-1))
         
-        # Build the text with highlighted option
+        # 构建带高亮选项的文本
         lines = []
         for i, option in enumerate(options):
             if i == highlighted_idx:
@@ -455,7 +455,7 @@ def interaction_pattern_text_strategy(draw):
         return text, interaction_type, expected_choices
     
     elif interaction_type == InteractionType.PLAN_APPROVAL:
-        # Generate plan approval patterns
+        # 生成计划批准模式
         plan_text = draw(st.sampled_from([
             "Proceed?",
             "Proceed with this plan?",
@@ -463,8 +463,8 @@ def interaction_pattern_text_strategy(draw):
             "Proceed with the following actions?",
         ]))
         
-        # Choose whether to include explicit choices
-        # IMPORTANT: Don't use ❯ symbol as it would trigger highlighted_option (higher priority)
+        # 选择是否包含显式选项
+        # 重要：不要使用 ❯ 符号，因为它会触发 highlighted_option（更高优先级）
         include_choices = draw(st.booleans())
         
         if include_choices:
@@ -476,15 +476,15 @@ def interaction_pattern_text_strategy(draw):
                 text = f"{plan_text}\nCancel"
                 expected_choices = ["Proceed", "Cancel"]  # Both found in text
         else:
-            # Just the question - "Proceed" will be extracted from the question text
+            # 仅问题——"Proceed" 将从问题文本中提取
             text = plan_text
             expected_choices = ["Proceed"]  # Only "Proceed" is in the text
         
         return text, interaction_type, expected_choices
     
     elif interaction_type == InteractionType.USER_QUESTION:
-        # Generate user question patterns
-        # IMPORTANT: Avoid using "proceed" as it would trigger plan_approval (higher priority)
+        # 生成用户问题模式
+        # 重要：避免使用 "proceed"，因为它会触发 plan_approval（更高优先级）
         question_start = draw(st.sampled_from([
             "Do you want to",
             "Would you like to",
@@ -500,7 +500,7 @@ def interaction_pattern_text_strategy(draw):
         
         text = f"{question_start} {action}?"
         
-        # Optionally add explicit choices
+        # 可选地添加显式选项
         include_choices = draw(st.booleans())
         if include_choices:
             text += "\nYes\nNo"
@@ -510,13 +510,13 @@ def interaction_pattern_text_strategy(draw):
         return text, interaction_type, expected_choices
     
     else:  # InteractionType.SELECTION_MENU
-        # Generate selection menu patterns
+        # 生成选择菜单模式
         num_items = draw(st.integers(min_value=2, max_value=6))
         
-        # Choose menu style
+        # 选择菜单样式
         menu_style = draw(st.sampled_from(['numbered', 'bulleted_dash', 'bulleted_star', 'bulleted_plus']))
         
-        # Generate menu items
+        # 生成菜单项
         items = []
         for i in range(num_items):
             item_text = draw(st.text(
@@ -526,7 +526,7 @@ def interaction_pattern_text_strategy(draw):
             ))
             items.append(item_text.strip())
         
-        # Build menu text
+        # 构建菜单文本
         lines = []
         for i, item in enumerate(items):
             if menu_style == 'numbered':
@@ -544,149 +544,149 @@ def interaction_pattern_text_strategy(draw):
         return text, interaction_type, expected_choices
 
 
-# Feature: claude-code-status-monitoring, Property 6: Pattern Matching and Choice Extraction
+# 功能：claude-code-status-monitoring，属性 6：模式匹配和选项提取
 @given(pattern_data=interaction_pattern_text_strategy())
 @settings(max_examples=100, deadline=None)
 def test_property_pattern_matching_and_choice_extraction(pattern_data):
     """
-    **Validates: Requirements 4.3, 4.4, 4.5, 4.6, 4.7, 4.10, 9.7**
-    
-    Property 6: Pattern Matching and Choice Extraction
-    For any text matching an interaction pattern, the Terminal_Detector should
-    correctly classify the interaction_type and extract all available choices
-    as a list of strings.
+    **验证需求：4.3, 4.4, 4.5, 4.6, 4.7, 4.10, 9.7**
+
+    属性 6：模式匹配和选项提取
+    对于任何匹配交互模式的文本，Terminal_Detector 应
+    正确分类 interaction_type 并将所有可用选项
+    提取为字符串列表。
     """
     from terminalcp.terminal_detector import TerminalDetector
     
     text, expected_type, expected_choices = pattern_data
-    
-    # Create detector
+
+    # 创建检测器
     detector = TerminalDetector()
-    
-    # Split text into lines for detect_interactive
+
+    # 将文本分割为行以用于 detect_interactive
     text_lines = text.split('\n')
-    
-    # Detect interactive pattern
+
+    # 检测交互模式
     result = detector.detect_interactive(text_lines)
-    
-    # Property 1: Should detect the pattern
+
+    # 属性 1：应检测到模式
     assert result is not None, \
         f"Failed to detect {expected_type.value} pattern in text:\n{text}"
     
-    # Property 2: Should correctly classify the interaction type
+    # 属性 2：应正确分类交互类型
     assert result.interaction_type == expected_type, \
         f"Expected interaction type {expected_type.value} but got {result.interaction_type.value} for text:\n{text}"
     
-    # Property 3: Choices should be a list of strings
+    # 属性 3：选项应为字符串列表
     assert isinstance(result.choices, list), \
         f"Choices should be a list, got {type(result.choices)}"
     
     assert all(isinstance(choice, str) for choice in result.choices), \
         f"All choices should be strings, got {[type(c) for c in result.choices]}"
     
-    # Property 4: Should extract the expected choices
-    # For some patterns, the order might vary or additional choices might be found
-    # So we check that all expected choices are present
+    # 属性 4：应提取预期选项
+    # 对于某些模式，顺序可能不同或可能找到额外选项
+    # 因此我们检查所有预期选项都存在
     for expected_choice in expected_choices:
         assert any(expected_choice.lower() in choice.lower() or choice.lower() in expected_choice.lower() 
                    for choice in result.choices), \
             f"Expected choice '{expected_choice}' not found in extracted choices {result.choices} for text:\n{text}"
     
-    # Property 5: Should have at least one choice
+    # 属性 5：应至少有一个选项
     assert len(result.choices) > 0, \
         f"Should extract at least one choice, got empty list for text:\n{text}"
     
-    # Property 6: Choices should not be empty strings
+    # 属性 6：选项不应为空字符串
     assert all(len(choice.strip()) > 0 for choice in result.choices), \
         f"Choices should not be empty strings, got {result.choices}"
 
 
-# Feature: claude-code-status-monitoring, Property 10: Timing Invariants
+# 功能：claude-code-status-monitoring，属性 10：计时不变量
 @given(session_state=session_state_strategy())
 @settings(max_examples=100)
 def test_property_timing_invariants(session_state):
     """
-    **Validates: Requirements 5.3, 5.4, 7.2, 8.1, 8.2, 8.3, 8.4, 8.6**
-    
-    Property 10: Timing Invariants
-    For any session, when both timestamps exist then duration_seconds should
-    equal their difference; and all timestamps should be in ISO 8601 format.
+    **验证需求：5.3, 5.4, 7.2, 8.1, 8.2, 8.3, 8.4, 8.6**
+
+    属性 10：计时不变量
+    对于任何会话，当两个时间戳都存在时，duration_seconds 应
+    等于它们的差值；所有时间戳应为 ISO 8601 格式。
     """
     response = session_state.to_status_response()
     
-    # If both timestamps exist, duration should be calculated
+    # 如果两个时间戳都存在，应计算持续时间
     if session_state.started_at is not None and session_state.completed_at is not None:
         expected_duration = (session_state.completed_at - session_state.started_at).total_seconds()
         assert response.timing.duration_seconds is not None
         assert abs(response.timing.duration_seconds - expected_duration) < 0.001
     else:
-        # If either timestamp is missing, duration should be None
+        # 如果任一时间戳缺失，持续时间应为 None
         assert response.timing.duration_seconds is None
     
-    # Verify timestamp format (ISO 8601 with timezone)
+    # 验证时间戳格式（带时区的 ISO 8601）
     if response.timing.started_at is not None:
         assert isinstance(response.timing.started_at, str)
-        # Should contain timezone indicator (+ or Z)
+        # 应包含时区指示符（+ 或 Z）
         assert '+' in response.timing.started_at or 'Z' in response.timing.started_at
-        # Should be parseable as ISO 8601
+        # 应可解析为 ISO 8601
         datetime.fromisoformat(response.timing.started_at.replace('Z', '+00:00'))
-    
+
     if response.timing.completed_at is not None:
         assert isinstance(response.timing.completed_at, str)
-        # Should contain timezone indicator (+ or Z)
+        # 应包含时区指示符（+ 或 Z）
         assert '+' in response.timing.completed_at or 'Z' in response.timing.completed_at
-        # Should be parseable as ISO 8601
+        # 应可解析为 ISO 8601
         datetime.fromisoformat(response.timing.completed_at.replace('Z', '+00:00'))
 
 
-# Feature: claude-code-status-monitoring, Property 17: Non-Interactive State Field Nullability
+# 功能：claude-code-status-monitoring，属性 17：非交互状态字段可空性
 @given(session_state=session_state_strategy())
 @settings(max_examples=100)
 def test_property_non_interactive_state_field_nullability(session_state):
     """
-    **Validates: Requirements 9.5**
-    
-    Property 17: Non-Interactive State Field Nullability
-    For any session where terminal_state is not interactive, the response fields
-    interaction_type and choices should be null.
+    **验证需求：9.5**
+
+    属性 17：非交互状态字段可空性
+    对于 terminal_state 不是 interactive 的任何会话，响应中的
+    interaction_type 和 choices 字段应为 null。
     """
-    # Set terminal_state to non-interactive
+    # 设置 terminal_state 为非交互状态
     if session_state.terminal_state != TerminalState.INTERACTIVE:
-        # Clear interaction fields
+        # 清除交互字段
         session_state.interaction_type = None
         session_state.choices = None
         
         response = session_state.to_status_response()
         
-        # Verify interaction fields are null
+        # 验证交互字段为 null
         assert response.detail.interaction_type is None
         assert response.detail.choices is None
 
 
-# Custom strategy for generating ANSI-encoded terminal output
+# 用于生成 ANSI 编码终端输出的自定义策略
 @st.composite
 def ansi_output_strategy(draw):
     """
-    Generate valid ANSI-encoded terminal output.
-    
-    Creates text with various ANSI escape sequences including:
-    - SGR (Select Graphic Rendition) codes for colors and styles
-    - Cursor movement commands
-    - Screen clearing sequences
-    - Plain text content
+    生成有效的 ANSI 编码终端输出。
+
+    创建包含各种 ANSI 转义序列的文本，包括：
+    - SGR（选择图形再现）码用于颜色和样式
+    - 光标移动命令
+    - 屏幕清除序列
+    - 纯文本内容
     """
-    # Generate base text content
+    # 生成基础文本内容
     text_parts = []
     
-    # Add some plain text
+    # 添加纯文本
     num_parts = draw(st.integers(min_value=1, max_value=10))
     
     for _ in range(num_parts):
-        # Choose what to add
+        # 选择要添加的内容
         choice = draw(st.integers(min_value=0, max_value=5))
         
         if choice == 0:
-            # Plain text
+            # 纯文本
             text_parts.append(draw(st.text(
                 alphabet=st.characters(
                     whitelist_categories=('Lu', 'Ll', 'Nd', 'Zs'),
@@ -697,69 +697,69 @@ def ansi_output_strategy(draw):
                 max_size=50
             )))
         elif choice == 1:
-            # SGR color code (foreground colors 30-37, background 40-47)
+            # SGR 颜色码（前景色 30-37，背景色 40-47）
             color = draw(st.integers(min_value=30, max_value=47))
             text_parts.append(f"\x1b[{color}m")
         elif choice == 2:
-            # SGR style code (bold, underline, etc.)
-            style = draw(st.sampled_from([0, 1, 4, 7]))  # reset, bold, underline, reverse
+            # SGR 样式码（粗体、下划线等）
+            style = draw(st.sampled_from([0, 1, 4, 7]))  # 重置、粗体、下划线、反转
             text_parts.append(f"\x1b[{style}m")
         elif choice == 3:
-            # Cursor movement
+            # 光标移动
             row = draw(st.integers(min_value=1, max_value=50))
             col = draw(st.integers(min_value=1, max_value=120))
             text_parts.append(f"\x1b[{row};{col}H")
         elif choice == 4:
-            # Clear screen
+            # 清除屏幕
             text_parts.append("\x1b[2J")
         else:
-            # Newline
+            # 换行
             text_parts.append("\n")
     
     return ''.join(text_parts)
 
 
-# Feature: claude-code-status-monitoring, Property 11: ANSI Processing Round Trip
+# 功能：claude-code-status-monitoring，属性 11：ANSI 处理往返
 @given(raw_output=ansi_output_strategy())
 @settings(max_examples=100, deadline=None)
 def test_property_ansi_processing_round_trip(raw_output):
     """
-    **Validates: Requirements 2.3, 2.4, 2.5, 2.7**
-    
-    Property 11: ANSI Processing Round Trip
-    For any valid ANSI-encoded terminal output, feeding it through pyte rendering
-    (or regex fallback on failure) should produce clean text without ANSI control
-    codes, and trailing whitespace should be stripped from each line.
+    **验证需求：2.3, 2.4, 2.5, 2.7**
+
+    属性 11：ANSI 处理往返
+    对于任何有效的 ANSI 编码终端输出，通过 pyte 渲染
+    （或失败时通过正则回退）应产生不含 ANSI 控制码的
+    干净文本，且每行的尾部空白应被剥离。
     """
     from terminalcp.status_detector import PyteRenderer
     
-    # Create renderer
+    # 创建渲染器
     renderer = PyteRenderer()
-    
-    # Render the ANSI output
+
+    # 渲染 ANSI 输出
     rendered_text = renderer.render(raw_output)
     
-    # Property 1: Result should be a string
+    # 属性 1：结果应为字符串
     assert isinstance(rendered_text, str), "Rendered output must be a string"
     
-    # Property 2: No ANSI escape sequences should remain
-    # ANSI escape sequences start with ESC [ (or \x1b[)
+    # 属性 2：不应残留 ANSI 转义序列
+    # ANSI 转义序列以 ESC [（或 \x1b[）开头
     ansi_pattern = re.compile(r'\x1b\[[^a-zA-Z]*[a-zA-Z]')
     ansi_matches = ansi_pattern.findall(rendered_text)
     assert len(ansi_matches) == 0, f"ANSI codes found in rendered output: {ansi_matches}"
     
-    # Property 3: No ESC character should remain at all
+    # 属性 3：不应残留任何 ESC 字符
     assert '\x1b' not in rendered_text, "ESC character (\\x1b) found in rendered output"
     
-    # Property 4: Trailing whitespace should be stripped from each line
+    # 属性 4：每行的尾部空白应被剥离
     lines = rendered_text.split('\n')
     for i, line in enumerate(lines):
-        # Check that line doesn't end with spaces or tabs
+        # 检查行不以空格或制表符结尾
         if len(line) > 0:
             assert not line.endswith(' ') and not line.endswith('\t'), \
                 f"Line {i} has trailing whitespace: {repr(line)}"
     
-    # Property 5: Invisible Unicode characters should be removed
+    # 属性 5：不可见 Unicode 字符应被移除
     invisible_chars = ['\u200b', '\u200c', '\u200d', '\u200e', '\u200f', '\ufeff']
     for char in invisible_chars:
         assert char not in rendered_text, \

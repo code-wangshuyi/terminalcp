@@ -255,6 +255,12 @@ class TerminalServer:
                     state, detail = await self.process_manager.get_claude_status(session_id)
                     result = f"{state}: {detail}" if detail else state
 
+            elif action == "raw-display":
+                session_id = args.get("id")
+                if not session_id:
+                    raise RuntimeError("Missing required field: id")
+                result = await self.process_manager.get_raw_display(session_id)
+
             else:
                 raise RuntimeError(f"Unknown action: {action}")
 

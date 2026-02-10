@@ -1,9 +1,9 @@
 """
-Status detection for Claude Code CLI sessions.
+Claude Code CLI 会话的状态检测。
 
-This module provides real-time status monitoring capabilities for terminalcp,
-enabling automated orchestration systems to programmatically determine the
-current execution phase of Claude Code without manual parsing of terminal output.
+本模块为 terminalcp 提供实时状态监控能力，
+使自动化编排系统能够以编程方式确定 Claude Code 的
+当前执行阶段，而无需手动解析终端输出。
 """
 
 from dataclasses import dataclass, field
@@ -16,10 +16,9 @@ import re
 
 class TerminalState(Enum):
     """
-    Low-level terminal output state.
-    
-    Represents the current output behavior of the terminal based on
-    stability analysis and pattern matching.
+    底层终端输出状态。
+
+    基于稳定性分析和模式匹配，表示终端的当前输出行为。
     """
     RUNNING = "running"
     INTERACTIVE = "interactive"
@@ -28,10 +27,9 @@ class TerminalState(Enum):
 
 class TaskStatus(Enum):
     """
-    High-level step execution status.
-    
-    Represents the execution phase of a task, tracking progress from
-    initialization through completion or failure.
+    高层任务执行状态。
+
+    表示任务的执行阶段，跟踪从初始化到完成或失败的进度。
     """
     PENDING = "pending"
     RUNNING = "running"
@@ -42,10 +40,9 @@ class TaskStatus(Enum):
 
 class InteractionType(Enum):
     """
-    Types of interactive prompts detected in terminal output.
-    
-    These are checked in priority order to ensure the most specific
-    pattern is matched first.
+    终端输出中检测到的交互提示类型。
+
+    按优先级顺序检查，确保最具体的模式最先匹配。
     """
     PERMISSION_CONFIRM = "permission_confirm"
     HIGHLIGHTED_OPTION = "highlighted_option"
@@ -57,17 +54,17 @@ class InteractionType(Enum):
 @dataclass
 class TimingInfo:
     """
-    Timing information for task execution.
-    
-    Tracks when a task started, completed, and the total duration.
-    All timestamps are in ISO 8601 format with timezone information.
+    任务执行的计时信息。
+
+    跟踪任务的开始时间、完成时间和总持续时间。
+    所有时间戳均为 ISO 8601 格式并带时区信息。
     """
     started_at: Optional[str] = None
     completed_at: Optional[str] = None
     duration_seconds: Optional[float] = None
     
     def to_dict(self) -> Dict[str, Any]:
-        """Convert to JSON-serializable dictionary."""
+        """转换为 JSON 可序列化的字典。"""
         return {
             "started_at": self.started_at,
             "completed_at": self.completed_at,
@@ -78,17 +75,16 @@ class TimingInfo:
 @dataclass
 class StatusDetail:
     """
-    Detailed information about the current status.
-    
-    Provides human-readable description and interaction-specific details
-    when the terminal is in an interactive state.
+    当前状态的详细信息。
+
+    提供人类可读的描述以及终端处于交互状态时的交互相关详情。
     """
     description: str
     interaction_type: Optional[str] = None
     choices: Optional[List[str]] = None
     
     def to_dict(self) -> Dict[str, Any]:
-        """Convert to JSON-serializable dictionary."""
+        """转换为 JSON 可序列化的字典。"""
         return {
             "description": self.description,
             "interaction_type": self.interaction_type,
@@ -99,10 +95,10 @@ class StatusDetail:
 @dataclass
 class StatusResponse:
     """
-    The structured response returned by get_status.
-    
-    Contains all information about the current state of a monitored session,
-    including terminal state, task status, stability metrics, and timing.
+    get_status 返回的结构化响应。
+
+    包含被监控会话的当前状态的所有信息，
+    包括终端状态、任务状态、稳定性指标和计时。
     """
     terminal_state: TerminalState
     task_status: TaskStatus
@@ -112,10 +108,10 @@ class StatusResponse:
     
     def to_dict(self) -> Dict[str, Any]:
         """
-        Convert to JSON-serializable dictionary.
-        
-        Returns:
-            Dictionary with all fields properly formatted for JSON serialization.
+        转换为 JSON 可序列化的字典。
+
+        返回:
+            所有字段均正确格式化以便 JSON 序列化的字典。
         """
         return {
             "terminal_state": self.terminal_state.value,
@@ -127,10 +123,10 @@ class StatusResponse:
     
     def to_json(self) -> str:
         """
-        Convert to JSON string.
-        
-        Returns:
-            Formatted JSON string representation of the status response.
+        转换为 JSON 字符串。
+
+        返回:
+            状态响应的格式化 JSON 字符串表示。
         """
         return json.dumps(self.to_dict(), indent=2)
 
@@ -138,10 +134,9 @@ class StatusResponse:
 @dataclass
 class InteractionMatch:
     """
-    Result of interactive pattern matching.
-    
-    Contains the detected interaction type, available choices,
-    and the text that matched the pattern.
+    交互模式匹配的结果。
+
+    包含检测到的交互类型、可用选项和匹配的文本。
     """
     interaction_type: InteractionType
     choices: List[str]
@@ -151,10 +146,9 @@ class InteractionMatch:
 @dataclass
 class InteractionPattern:
     """
-    A regex pattern for detecting interactive prompts.
-    
-    Patterns are checked in priority order, with lower priority values
-    being checked first.
+    用于检测交互式提示的正则模式。
+
+    模式按优先级顺序检查，优先级值越低越先检查。
     """
     interaction_type: InteractionType
     pattern: Any  # re.Pattern, but using Any to avoid import
@@ -164,10 +158,10 @@ class InteractionPattern:
 @dataclass
 class SessionState:
     """
-    Tracks the state of a monitored session.
-    
-    Maintains all information needed to determine the current execution
-    phase, including stability tracking, timing, and interaction details.
+    跟踪被监控会话的状态。
+
+    维护确定当前执行阶段所需的所有信息，
+    包括稳定性跟踪、计时和交互详情。
     """
     session_id: str
     terminal_state: TerminalState = TerminalState.RUNNING
@@ -183,27 +177,27 @@ class SessionState:
     
     def format_timestamp(self, dt: Optional[datetime]) -> Optional[str]:
         """
-        Format a datetime object to ISO 8601 string with timezone.
-        
-        Args:
-            dt: The datetime object to format, or None
-            
-        Returns:
-            ISO 8601 formatted string with timezone, or None if input is None
+        将 datetime 对象格式化为带时区的 ISO 8601 字符串。
+
+        参数:
+            dt: 要格式化的 datetime 对象，或 None
+
+        返回:
+            带时区的 ISO 8601 格式字符串，如果输入为 None 则返回 None
         """
         if dt is None:
             return None
-        # Ensure timezone is set
+        # 确保时区已设置
         if dt.tzinfo is None:
             dt = dt.replace(tzinfo=timezone.utc)
         return dt.isoformat()
     
     def calculate_duration(self) -> Optional[float]:
         """
-        Calculate duration in seconds between started_at and completed_at.
-        
-        Returns:
-            Duration in seconds, or None if either timestamp is missing
+        计算 started_at 和 completed_at 之间的持续时间（秒）。
+
+        返回:
+            持续时间（秒），如果任一时间戳缺失则返回 None
         """
         if self.started_at is None or self.completed_at is None:
             return None
@@ -211,19 +205,19 @@ class SessionState:
     
     def to_status_response(self) -> StatusResponse:
         """
-        Convert session state to a StatusResponse.
-        
-        Returns:
-            StatusResponse object with all current state information
+        将会话状态转换为 StatusResponse。
+
+        返回:
+            包含所有当前状态信息的 StatusResponse 对象
         """
-        # Create timing info
+        # 创建计时信息
         timing = TimingInfo(
             started_at=self.format_timestamp(self.started_at),
             completed_at=self.format_timestamp(self.completed_at),
             duration_seconds=self.calculate_duration()
         )
         
-        # Create detail info
+        # 创建详情信息
         detail = StatusDetail(
             description=self.description,
             interaction_type=self.interaction_type.value if self.interaction_type else None,
@@ -239,39 +233,39 @@ class SessionState:
         )
 
 
-# Configuration constants
+# 配置常量
 POLLING_INTERVAL_SECONDS = 1.0
 INTERACTIVE_STABILITY_THRESHOLD = 2
 COMPLETED_STABILITY_THRESHOLD = 5
 
-# Pyte configuration
+# Pyte 配置
 PYTE_TERMINAL_COLS = 120
 PYTE_TERMINAL_ROWS = 50
 
-# Pattern matching configuration
+# 模式匹配配置
 PATTERN_MATCH_LAST_N_LINES = 30
 
-# Auto-response limits
+# 自动响应限制
 MAX_AUTO_RESPONSES_PER_STEP = 20
 
 
 class PyteRenderer:
     """
-    Renders raw ANSI output to clean screen text using pyte.
-    Falls back to regex stripping on failure.
+    使用 pyte 将原始 ANSI 输出渲染为干净的屏幕文本。
+    渲染失败时回退到正则表达式剥离。
 
-    This class handles local pyte rendering with a configurable terminal size.
-    It maintains a pyte Screen and Stream to process ANSI escape sequences
-    and extract clean text output.
+    本类使用可配置的终端尺寸处理本地 pyte 渲染。
+    它维护一个 pyte Screen 和 Stream 来处理 ANSI 转义序列
+    并提取干净的文本输出。
     """
 
     def __init__(self, cols: int = PYTE_TERMINAL_COLS, rows: int = PYTE_TERMINAL_ROWS):
         """
-        Initialize PyteRenderer with configurable terminal dimensions.
+        使用可配置的终端尺寸初始化 PyteRenderer。
 
-        Args:
-            cols: Number of columns for the terminal (default: 120)
-            rows: Number of rows for the terminal (default: 50)
+        参数:
+            cols: 终端列数（默认：120）
+            rows: 终端行数（默认：50）
         """
         self._cols = cols
         self._rows = rows
@@ -281,157 +275,155 @@ class PyteRenderer:
 
     def _initialize_pyte(self) -> None:
         """
-        Initialize pyte screen and stream.
+        初始化 pyte screen 和 stream。
 
-        Attempts to import pyte and create Screen and Stream instances.
-        Handles both ByteStream (newer pyte versions) and regular Stream.
+        尝试导入 pyte 并创建 Screen 和 Stream 实例。
+        同时处理 ByteStream（较新 pyte 版本）和普通 Stream。
         """
         try:
             import pyte
 
-            # Create screen with configured dimensions
+            # 使用配置的尺寸创建屏幕
             self._screen = pyte.Screen(self._cols, self._rows)
 
-            # Try to use ByteStream first (newer pyte versions)
-            # If not available, fall back to regular Stream
+            # 优先尝试使用 ByteStream（较新的 pyte 版本）
+            # 如不可用，回退到普通 Stream
             try:
                 self._stream = pyte.ByteStream(self._screen)
             except AttributeError:
-                # Older pyte versions only have Stream
+                # 较旧的 pyte 版本只有 Stream
                 self._stream = pyte.Stream(self._screen)
 
         except ImportError:
-            # pyte not available, will use regex fallback
+            # pyte 不可用，将使用正则回退
             self._screen = None
             self._stream = None
 
 
     def render(self, raw_output: str) -> str:
         """
-        Render raw ANSI output to clean text.
+        将原始 ANSI 输出渲染为干净文本。
 
-        Attempts to render using pyte first. If pyte is not available or
-        rendering fails, falls back to regex-based ANSI stripping.
+        优先尝试使用 pyte 渲染。如果 pyte 不可用或
+        渲染失败，回退到基于正则的 ANSI 剥离。
 
-        Args:
-            raw_output: Terminal output with ANSI escape sequences
+        参数:
+            raw_output: 包含 ANSI 转义序列的终端输出
 
-        Returns:
-            Clean screen text with ANSI codes removed
+        返回:
+            移除了 ANSI 码的干净屏幕文本
         """
         try:
             return self._render_with_pyte(raw_output)
         except Exception:
-            # Fall back to regex stripping if pyte fails
+            # pyte 失败时回退到正则剥离
             return self._render_with_regex(raw_output)
 
     def _render_with_pyte(self, raw_output: str) -> str:
         """
-        Attempt to render using pyte.
+        尝试使用 pyte 渲染。
 
-        Args:
-            raw_output: Terminal output with ANSI escape sequences
+        参数:
+            raw_output: 包含 ANSI 转义序列的终端输出
 
-        Returns:
-            Clean screen text extracted from pyte display buffer
+        返回:
+            从 pyte 显示缓冲区提取的干净屏幕文本
 
-        Raises:
-            Exception: If pyte is not available or rendering fails
+        异常:
+            Exception: 当 pyte 不可用或渲染失败时
         """
         if self._screen is None or self._stream is None:
             raise RuntimeError("pyte not available")
 
-        # Reset screen for fresh rendering
+        # 重置屏幕以进行新的渲染
         self._screen.reset()
 
-        # Feed output to pyte stream
-        # Handle both string and bytes input
+        # 将输出送入 pyte 流
+        # 处理字符串和字节输入
         if isinstance(raw_output, str):
-            # For ByteStream, encode to bytes
+            # 对于 ByteStream，编码为字节
             if hasattr(self._stream, 'feed') and 'Byte' in type(self._stream).__name__:
                 self._stream.feed(raw_output.encode('utf-8', errors='replace'))
             else:
-                # For regular Stream, feed string directly
+                # 对于普通 Stream，直接送入字符串
                 self._stream.feed(raw_output)
         else:
-            # Already bytes
+            # 已经是字节
             self._stream.feed(raw_output)
 
-        # Extract and clean text from screen buffer
+        # 从屏幕缓冲区提取并清理文本
         return self._extract_screen_text()
 
     def _render_with_regex(self, raw_output: str) -> str:
         """
-        Fallback: strip ANSI codes using regex.
+        回退方案：使用正则表达式剥离 ANSI 码。
 
-        Uses the existing strip_ansi() function from ansi.py module.
+        使用 ansi.py 模块中现有的 strip_ansi() 函数。
 
-        Args:
-            raw_output: Terminal output with ANSI escape sequences
+        参数:
+            raw_output: 包含 ANSI 转义序列的终端输出
 
-        Returns:
-            Text with ANSI codes removed
+        返回:
+            移除了 ANSI 码的文本
         """
         from terminalcp.ansi import strip_ansi
 
-        # Strip ANSI codes
+        # 剥离 ANSI 码
         clean_text = strip_ansi(raw_output)
 
-        # Apply same cleaning as pyte rendering
+        # 应用与 pyte 渲染相同的清理
         return self._clean_text(clean_text)
 
     def _extract_screen_text(self) -> str:
         """
-        Extract text from pyte screen buffer.
+        从 pyte 屏幕缓冲区提取文本。
 
-        Iterates through the screen display buffer and extracts text lines,
-        then applies cleaning to remove trailing whitespace and invisible
-        Unicode characters.
+        遍历屏幕显示缓冲区并提取文本行，
+        然后进行清理以移除尾部空白和不可见 Unicode 字符。
 
-        Returns:
-            Clean text extracted from screen buffer
+        返回:
+            从屏幕缓冲区提取的干净文本
         """
         if self._screen is None:
             return ""
 
-        # Extract lines from screen display buffer
+        # 从屏幕显示缓冲区提取行
         lines = []
         for row in range(self._rows):
-            # Get the line from the screen display
+            # 从屏幕显示获取行
             line = self._screen.display[row]
             lines.append(line)
 
-        # Join lines and clean
+        # 合并行并清理
         text = '\n'.join(lines)
         return self._clean_text(text)
 
     def _clean_text(self, text: str) -> str:
         """
-        Remove trailing whitespace and invisible Unicode characters.
+        移除尾部空白和不可见 Unicode 字符。
 
-        Strips trailing whitespace from each line and removes common
-        invisible Unicode characters like zero-width spaces, zero-width
-        joiners, and other control characters.
+        从每行剥离尾部空白，并移除常见的不可见 Unicode 字符，
+        如零宽空格、零宽连接符和其他控制字符。
 
-        Args:
-            text: Text to clean
+        参数:
+            text: 要清理的文本
 
-        Returns:
-            Cleaned text with trailing whitespace and invisible characters removed
+        返回:
+            移除了尾部空白和不可见字符的干净文本
         """
-        # Strip trailing whitespace from each line
+        # 从每行剥离尾部空白
         lines = text.split('\n')
         lines = [line.rstrip() for line in lines]
 
-        # Remove invisible Unicode characters
-        # Zero-width space, zero-width joiner, zero-width non-joiner, etc.
+        # 移除不可见 Unicode 字符
+        # 零宽空格、零宽连接符、零宽非连接符等
         invisible_chars = [
-            '\u200b',  # Zero-width space
-            '\u200c',  # Zero-width non-joiner
-            '\u200d',  # Zero-width joiner
-            '\u200e',  # Left-to-right mark
-            '\u200f',  # Right-to-left mark
-            '\ufeff',  # Zero-width no-break space (BOM)
+            '\u200b',  # 零宽空格
+            '\u200c',  # 零宽非连接符
+            '\u200d',  # 零宽连接符
+            '\u200e',  # 从左到右标记
+            '\u200f',  # 从右到左标记
+            '\ufeff',  # 零宽不换行空格（BOM）
         ]
 
         cleaned_lines = []
@@ -447,69 +439,69 @@ class PyteRenderer:
 
 class StatusDetector:
     """
-    Orchestrates status detection for Claude Code CLI sessions.
-    
-    Maintains per-session state and coordinates polling, rendering, and pattern matching.
-    This class is the main entry point for status monitoring functionality.
+    编排 Claude Code CLI 会话的状态检测。
+
+    维护每个会话的状态，并协调轮询、渲染和模式匹配。
+    本类是状态监控功能的主入口点。
     """
     
     def __init__(self, terminal_client: Any):
         """
-        Initialize StatusDetector with TerminalClient dependency.
-        
-        Args:
-            terminal_client: The TerminalClient instance for communicating with terminal sessions
+        使用 TerminalClient 依赖初始化 StatusDetector。
+
+        参数:
+            terminal_client: 用于与终端会话通信的 TerminalClient 实例
         """
         from terminalcp.terminal_detector import TerminalDetector
         
-        # Store the terminal client for making requests
+        # 存储终端客户端以发送请求
         self._client = terminal_client
         
-        # Per-session state tracking
+        # 每个会话的状态跟踪
         self._session_states: Dict[str, SessionState] = {}
         
-        # Cached rendered output for each session (for frontend display)
+        # 每个会话的缓存渲染输出（用于前端显示）
         self._live_outputs: Dict[str, str] = {}
         
-        # Per-session pyte renderers
+        # 每个会话的 pyte 渲染器
         self._pyte_renderers: Dict[str, PyteRenderer] = {}
         
-        # Terminal detector for pattern matching
+        # 用于模式匹配的终端检测器
         self._terminal_detector = TerminalDetector()
         
-        # Configuration constants
+        # 配置常量
         self._polling_interval = POLLING_INTERVAL_SECONDS
         self._interactive_threshold = INTERACTIVE_STABILITY_THRESHOLD
         self._completed_threshold = COMPLETED_STABILITY_THRESHOLD
 
     async def _poll_session(self, session_id: str) -> None:
         """
-        Execute one polling cycle for a session.
+        执行会话的一次轮询周期。
 
-        Updates state based on output changes and pattern matching.
-        This method:
-        1. Calls stream action with strip_ansi=false to get raw ANSI output
-        2. Renders the output using pyte
-        3. Compares with previous output to update stable_count
-        4. Caches the rendered output
+        根据输出变化和模式匹配更新状态。
+        本方法：
+        1. 调用 stream 操作并设置 strip_ansi=false 获取原始 ANSI 输出
+        2. 使用 pyte 渲染输出
+        3. 与之前的输出比较以更新 stable_count
+        4. 缓存渲染后的输出
 
-        Args:
-            session_id: The terminalcp session identifier
+        参数:
+            session_id: terminalcp 会话标识符
 
-        Raises:
-            RuntimeError: If session does not exist or stream action fails
+        异常:
+            RuntimeError: 如果会话不存在或 stream 操作失败
         """
-        # Get the session state
+        # 获取会话状态
         state = self._session_states.get(session_id)
         if not state:
             raise RuntimeError(f"Session not found: {session_id}")
 
-        # Get the pyte renderer for this session (create if needed)
+        # 获取此会话的 pyte 渲染器（如需要则创建）
         if session_id not in self._pyte_renderers:
             self._pyte_renderers[session_id] = PyteRenderer()
         renderer = self._pyte_renderers[session_id]
 
-        # Call stream action with strip_ansi=false to get raw ANSI output
+        # 调用 stream 操作并设置 strip_ansi=false 以获取原始 ANSI 输出
         try:
             raw_output = await self._client.request({
                 "action": "stream",
@@ -519,21 +511,21 @@ class StatusDetector:
         except Exception as e:
             raise RuntimeError(f"Failed to get stream output for session {session_id}: {e}")
 
-        # Render the output using pyte
+        # 使用 pyte 渲染输出
         rendered_output = renderer.render(raw_output)
 
-        # Compare with previous output to update stable_count
+        # 与之前的输出比较以更新 stable_count
         previous_output = state.last_output
         if rendered_output != previous_output:
-            # Output changed - reset stable_count to 0
+            # 输出已变化——将 stable_count 重置为 0
             state.stable_count = 0
         else:
-            # Output unchanged - increment stable_count
+            # 输出未变化——递增 stable_count
             state.stable_count += 1
 
-        # Update last_output with current rendered output
+        # 用当前渲染输出更新 last_output
         state.last_output = rendered_output
 
-        # Cache rendered output in _live_outputs for frontend access
+        # 将渲染输出缓存到 _live_outputs 供前端访问
         self._live_outputs[session_id] = rendered_output
 

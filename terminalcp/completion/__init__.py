@@ -1,4 +1,4 @@
-"""Shell completion support for terminalcp."""
+"""terminalcp 的 Shell 自动补全支持。"""
 from __future__ import annotations
 
 from .detect import detect_shell

@@ -1,8 +1,8 @@
 """
-Basic tests for status_detector data structures and enums.
+status_detector 数据结构和枚举的基础测试。
 
-Tests the core data structures defined in status_detector.py to ensure
-they are properly defined and can be instantiated correctly.
+测试 status_detector.py 中定义的核心数据结构，
+确保它们被正确定义且可以正确实例化。
 """
 
 import pytest
@@ -21,16 +21,16 @@ from terminalcp.status_detector import (
 
 
 class TestEnums:
-    """Test enum definitions."""
+    """测试枚举定义。"""
     
     def test_terminal_state_values(self):
-        """Test TerminalState enum has correct values."""
+        """测试 TerminalState 枚举具有正确的值。"""
         assert TerminalState.RUNNING.value == "running"
         assert TerminalState.INTERACTIVE.value == "interactive"
         assert TerminalState.COMPLETED.value == "completed"
     
     def test_task_status_values(self):
-        """Test TaskStatus enum has correct values."""
+        """测试 TaskStatus 枚举具有正确的值。"""
         assert TaskStatus.PENDING.value == "pending"
         assert TaskStatus.RUNNING.value == "running"
         assert TaskStatus.WAITING_FOR_INPUT.value == "waiting_for_input"
@@ -38,7 +38,7 @@ class TestEnums:
         assert TaskStatus.FAILED.value == "failed"
     
     def test_interaction_type_values(self):
-        """Test InteractionType enum has correct values."""
+        """测试 InteractionType 枚举具有正确的值。"""
         assert InteractionType.PERMISSION_CONFIRM.value == "permission_confirm"
         assert InteractionType.HIGHLIGHTED_OPTION.value == "highlighted_option"
         assert InteractionType.PLAN_APPROVAL.value == "plan_approval"
@@ -47,10 +47,10 @@ class TestEnums:
 
 
 class TestTimingInfo:
-    """Test TimingInfo dataclass."""
+    """测试 TimingInfo 数据类。"""
     
     def test_timing_info_creation(self):
-        """Test TimingInfo can be created with all fields."""
+        """测试 TimingInfo 可以使用所有字段创建。"""
         timing = TimingInfo(
             started_at="2026-02-09T10:30:00Z",
             completed_at="2026-02-09T10:30:45Z",
@@ -61,14 +61,14 @@ class TestTimingInfo:
         assert timing.duration_seconds == 45.2
     
     def test_timing_info_defaults(self):
-        """Test TimingInfo defaults to None for all fields."""
+        """测试 TimingInfo 所有字段默认为 None。"""
         timing = TimingInfo()
         assert timing.started_at is None
         assert timing.completed_at is None
         assert timing.duration_seconds is None
     
     def test_timing_info_to_dict(self):
-        """Test TimingInfo.to_dict() returns correct dictionary."""
+        """测试 TimingInfo.to_dict() 返回正确的字典。"""
         timing = TimingInfo(
             started_at="2026-02-09T10:30:00Z",
             completed_at="2026-02-09T10:30:45Z",
@@ -83,10 +83,10 @@ class TestTimingInfo:
 
 
 class TestStatusDetail:
-    """Test StatusDetail dataclass."""
+    """测试 StatusDetail 数据类。"""
     
     def test_status_detail_creation(self):
-        """Test StatusDetail can be created with all fields."""
+        """测试 StatusDetail 可以使用所有字段创建。"""
         detail = StatusDetail(
             description="Waiting for permission",
             interaction_type="permission_confirm",
@@ -97,14 +97,14 @@ class TestStatusDetail:
         assert detail.choices == ["Yes", "No"]
     
     def test_status_detail_defaults(self):
-        """Test StatusDetail defaults for optional fields."""
+        """测试 StatusDetail 可选字段的默认值。"""
         detail = StatusDetail(description="Running")
         assert detail.description == "Running"
         assert detail.interaction_type is None
         assert detail.choices is None
     
     def test_status_detail_to_dict(self):
-        """Test StatusDetail.to_dict() returns correct dictionary."""
+        """测试 StatusDetail.to_dict() 返回正确的字典。"""
         detail = StatusDetail(
             description="Waiting for permission",
             interaction_type="permission_confirm",
@@ -119,10 +119,10 @@ class TestStatusDetail:
 
 
 class TestStatusResponse:
-    """Test StatusResponse dataclass."""
+    """测试 StatusResponse 数据类。"""
     
     def test_status_response_creation(self):
-        """Test StatusResponse can be created with all fields."""
+        """测试 StatusResponse 可以使用所有字段创建。"""
         timing = TimingInfo(started_at="2026-02-09T10:30:00Z")
         detail = StatusDetail(description="Running")
         response = StatusResponse(
@@ -139,7 +139,7 @@ class TestStatusResponse:
         assert response.timing == timing
     
     def test_status_response_to_dict(self):
-        """Test StatusResponse.to_dict() returns correct dictionary."""
+        """测试 StatusResponse.to_dict() 返回正确的字典。"""
         timing = TimingInfo(started_at="2026-02-09T10:30:00Z")
         detail = StatusDetail(description="Running")
         response = StatusResponse(
@@ -157,7 +157,7 @@ class TestStatusResponse:
         assert result["timing"]["started_at"] == "2026-02-09T10:30:00Z"
     
     def test_status_response_to_json(self):
-        """Test StatusResponse.to_json() returns valid JSON string."""
+        """测试 StatusResponse.to_json() 返回有效的 JSON 字符串。"""
         timing = TimingInfo(started_at="2026-02-09T10:30:00Z")
         detail = StatusDetail(description="Running")
         response = StatusResponse(
@@ -174,10 +174,10 @@ class TestStatusResponse:
 
 
 class TestInteractionMatch:
-    """Test InteractionMatch dataclass."""
+    """测试 InteractionMatch 数据类。"""
     
     def test_interaction_match_creation(self):
-        """Test InteractionMatch can be created with all fields."""
+        """测试 InteractionMatch 可以使用所有字段创建。"""
         match = InteractionMatch(
             interaction_type=InteractionType.PERMISSION_CONFIRM,
             choices=["Yes", "No"],
@@ -189,10 +189,10 @@ class TestInteractionMatch:
 
 
 class TestInteractionPattern:
-    """Test InteractionPattern dataclass."""
+    """测试 InteractionPattern 数据类。"""
     
     def test_interaction_pattern_creation(self):
-        """Test InteractionPattern can be created with all fields."""
+        """测试 InteractionPattern 可以使用所有字段创建。"""
         import re
         pattern = InteractionPattern(
             interaction_type=InteractionType.PERMISSION_CONFIRM,
@@ -205,10 +205,10 @@ class TestInteractionPattern:
 
 
 class TestSessionState:
-    """Test SessionState dataclass."""
+    """测试 SessionState 数据类。"""
     
     def test_session_state_creation(self):
-        """Test SessionState can be created with required fields."""
+        """测试 SessionState 可以使用必需字段创建。"""
         state = SessionState(session_id="test-123")
         assert state.session_id == "test-123"
         assert state.terminal_state == TerminalState.RUNNING
@@ -223,27 +223,27 @@ class TestSessionState:
         assert state.description == "Session initialized"
     
     def test_format_timestamp_with_timezone(self):
-        """Test format_timestamp with timezone-aware datetime."""
+        """测试带时区的 datetime 的 format_timestamp。"""
         state = SessionState(session_id="test-123")
         dt = datetime(2026, 2, 9, 10, 30, 0, tzinfo=timezone.utc)
         result = state.format_timestamp(dt)
         assert result == "2026-02-09T10:30:00+00:00"
     
     def test_format_timestamp_without_timezone(self):
-        """Test format_timestamp adds UTC timezone if missing."""
+        """测试 format_timestamp 在缺少时区时添加 UTC。"""
         state = SessionState(session_id="test-123")
         dt = datetime(2026, 2, 9, 10, 30, 0)
         result = state.format_timestamp(dt)
         assert result == "2026-02-09T10:30:00+00:00"
     
     def test_format_timestamp_none(self):
-        """Test format_timestamp returns None for None input."""
+        """测试 format_timestamp 对 None 输入返回 None。"""
         state = SessionState(session_id="test-123")
         result = state.format_timestamp(None)
         assert result is None
     
     def test_calculate_duration(self):
-        """Test calculate_duration returns correct duration in seconds."""
+        """测试 calculate_duration 返回正确的秒数持续时间。"""
         state = SessionState(session_id="test-123")
         state.started_at = datetime(2026, 2, 9, 10, 30, 0, tzinfo=timezone.utc)
         state.completed_at = datetime(2026, 2, 9, 10, 30, 45, tzinfo=timezone.utc)
@@ -251,7 +251,7 @@ class TestSessionState:
         assert duration == 45.0
     
     def test_calculate_duration_with_fractional_seconds(self):
-        """Test calculate_duration handles fractional seconds."""
+        """测试 calculate_duration 处理小数秒。"""
         state = SessionState(session_id="test-123")
         state.started_at = datetime(2026, 2, 9, 10, 30, 0, 200000, tzinfo=timezone.utc)
         state.completed_at = datetime(2026, 2, 9, 10, 30, 45, 400000, tzinfo=timezone.utc)
@@ -259,21 +259,21 @@ class TestSessionState:
         assert duration == pytest.approx(45.2, rel=0.01)
     
     def test_calculate_duration_none_started(self):
-        """Test calculate_duration returns None if started_at is None."""
+        """测试 started_at 为 None 时 calculate_duration 返回 None。"""
         state = SessionState(session_id="test-123")
         state.completed_at = datetime(2026, 2, 9, 10, 30, 45, tzinfo=timezone.utc)
         duration = state.calculate_duration()
         assert duration is None
     
     def test_calculate_duration_none_completed(self):
-        """Test calculate_duration returns None if completed_at is None."""
+        """测试 completed_at 为 None 时 calculate_duration 返回 None。"""
         state = SessionState(session_id="test-123")
         state.started_at = datetime(2026, 2, 9, 10, 30, 0, tzinfo=timezone.utc)
         duration = state.calculate_duration()
         assert duration is None
     
     def test_to_status_response(self):
-        """Test to_status_response creates correct StatusResponse."""
+        """测试 to_status_response 创建正确的 StatusResponse。"""
         state = SessionState(session_id="test-123")
         state.terminal_state = TerminalState.INTERACTIVE
         state.task_status = TaskStatus.WAITING_FOR_INPUT
@@ -296,7 +296,7 @@ class TestSessionState:
         assert response.timing.duration_seconds is None
     
     def test_to_status_response_with_completion(self):
-        """Test to_status_response with completed state."""
+        """测试已完成状态的 to_status_response。"""
         state = SessionState(session_id="test-123")
         state.terminal_state = TerminalState.COMPLETED
         state.task_status = TaskStatus.COMPLETED
@@ -316,20 +316,20 @@ class TestSessionState:
 
 
 class TestStatusDetector:
-    """Test StatusDetector class initialization."""
+    """测试 StatusDetector 类初始化。"""
     
     def test_status_detector_initialization(self):
-        """Test StatusDetector can be initialized with TerminalClient."""
+        """测试 StatusDetector 可以使用 TerminalClient 初始化。"""
         from terminalcp.status_detector import StatusDetector
         from terminalcp.terminal_client import TerminalClient
         
-        # Create a mock terminal client
+        # 创建模拟终端客户端
         client = TerminalClient()
         
-        # Initialize StatusDetector
+        # 初始化 StatusDetector
         detector = StatusDetector(client)
         
-        # Verify initialization
+        # 验证初始化
         assert detector._client is client
         assert isinstance(detector._session_states, dict)
         assert len(detector._session_states) == 0
@@ -343,7 +343,7 @@ class TestStatusDetector:
         assert detector._completed_threshold == 5
     
     def test_status_detector_configuration_constants(self):
-        """Test StatusDetector uses correct configuration constants."""
+        """测试 StatusDetector 使用正确的配置常量。"""
         from terminalcp.status_detector import (
             StatusDetector,
             POLLING_INTERVAL_SECONDS,
@@ -355,7 +355,7 @@ class TestStatusDetector:
         client = TerminalClient()
         detector = StatusDetector(client)
         
-        # Verify configuration matches constants
+        # 验证配置与常量匹配
         assert detector._polling_interval == POLLING_INTERVAL_SECONDS
         assert detector._interactive_threshold == INTERACTIVE_STABILITY_THRESHOLD
         assert detector._completed_threshold == COMPLETED_STABILITY_THRESHOLD

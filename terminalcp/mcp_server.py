@@ -67,7 +67,7 @@ def run_mcp_server() -> None:
             raise ValueError("Invalid arguments: expected JSON object")
 
         action = args.get("action")
-        valid_actions = {"start", "stop", "stdout", "stdin", "list", "stream", "term-size", "kill-server", "claude-status"}
+        valid_actions = {"start", "stop", "stdout", "stdin", "list", "stream", "term-size", "kill-server", "claude-status", "raw-display"}
         if action not in valid_actions:
             raise ValueError(f"Unknown action: {action}. Valid actions: {', '.join(sorted(valid_actions))}")
 

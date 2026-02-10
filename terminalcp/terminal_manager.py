@@ -254,12 +254,33 @@ class TerminalManager:
             for proc in self._processes.values()
         ]
 
+    async def get_display_output(self, session_id: str) -> str:
+        """返回当前可见的终端显示内容，不包含滚动历史。"""
+        proc = self._processes.get(session_id)
+        if not proc:
+            raise RuntimeError(f"Process not found: {session_id}")
+        with proc.output_lock:
+            lines = [line.rstrip() for line in proc.screen.display]
+        return "\n".join(lines)
+
+    async def get_raw_display(self, session_id: str) -> str:
+        """返回带行号注释的显示内容，用于调试。"""
+        proc = self._processes.get(session_id)
+        if not proc:
+            raise RuntimeError(f"Process not found: {session_id}")
+        with proc.output_lock:
+            lines = []
+            for i, line in enumerate(proc.screen.display):
+                rstripped = line.rstrip()
+                lines.append(f"[{i:2d}] {rstripped}" if rstripped else f"[{i:2d}] (empty)")
+        return "\n".join(lines)
+
     async def get_claude_status(self, session_id: str) -> tuple[str, str]:
-        output = await self.get_output(session_id, lines=10)
+        output = await self.get_display_output(session_id)
         return detect_claude_state(output)
 
     async def get_claude_mode(self, session_id: str) -> str:
-        output = await self.get_output(session_id, lines=10)
+        output = await self.get_display_output(session_id)
         return detect_claude_mode(output)
 
     def get_process(self, session_id: str) -> Optional[ManagedTerminal]:

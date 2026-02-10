@@ -1,4 +1,4 @@
-"""Completion installation logic for each supported shell."""
+"""各支持 Shell 的自动补全安装逻辑。"""
 from __future__ import annotations
 
 import importlib.resources
@@ -10,7 +10,7 @@ from typing import Optional
 from .detect import detect_shell
 
 
-# Map shell name -> script filename inside the ``scripts`` package.
+# Shell 名称 -> ``scripts`` 包内的脚本文件名映射
 _SCRIPT_FILENAMES = {
     "zsh": "_terminalcp.zsh",
     "bash": "terminalcp.bash",
@@ -19,7 +19,7 @@ _SCRIPT_FILENAMES = {
 
 
 def get_completion_script(shell: str) -> str:
-    """Load the completion script for *shell* from package data."""
+    """从包数据中加载指定 *shell* 的自动补全脚本。"""
     filename = _SCRIPT_FILENAMES.get(shell)
     if not filename:
         raise ValueError(f"Unsupported shell: {shell}. Supported: {', '.join(_SCRIPT_FILENAMES)}")
@@ -29,7 +29,7 @@ def get_completion_script(shell: str) -> str:
 
 
 def install_completion(shell: Optional[str] = None) -> None:
-    """Detect (or use the given) shell type, then install the matching completion."""
+    """检测（或使用指定的）Shell 类型，然后安装匹配的自动补全。"""
     if shell is None:
         shell = detect_shell()
 
@@ -51,7 +51,7 @@ def install_completion(shell: Optional[str] = None) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Per-shell installers
+# 各 Shell 安装器
 # ---------------------------------------------------------------------------
 
 def _install_zsh() -> None:
@@ -107,11 +107,11 @@ def _install_fish() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Helpers
+# 辅助函数
 # ---------------------------------------------------------------------------
 
 def _get_bash_rc_path() -> Path:
-    """Return the preferred bash rc file path."""
+    """返回首选的 bash 配置文件路径。"""
     bashrc = Path.home() / ".bashrc"
     bash_profile = Path.home() / ".bash_profile"
 
@@ -126,7 +126,7 @@ def _ensure_lines_in_rc(
     rc_path: Path,
     checks_and_lines: list[tuple[str, str]],
 ) -> None:
-    """Append lines to *rc_path* if they are not already present."""
+    """如果指定行不存在，则追加到 *rc_path* 中。"""
     if rc_path.exists():
         content = rc_path.read_text()
     else:

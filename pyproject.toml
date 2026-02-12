@@ -1,6 +1,6 @@
 [project]
 name = "terminalcp"
-version = "1.0.3"
+version = "1.0.4"
 description = "MCP server for spawning and controlling background processes with virtual terminals (Python port)"
 readme = "README.md"
 requires-python = ">=3.10"

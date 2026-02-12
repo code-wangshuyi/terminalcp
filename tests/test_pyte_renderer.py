@@ -21,7 +21,7 @@ PyteRenderer 的单元测试。
 """
 
 import pytest
-from terminalcp.status_detector import PyteRenderer
+from terminalcp.claude_status import PyteRenderer
 
 
 class TestPyteRendererBasic:

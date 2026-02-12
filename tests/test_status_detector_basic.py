@@ -7,7 +7,7 @@ status_detector 数据结构和枚举的基础测试。
 
 import pytest
 from datetime import datetime, timezone
-from terminalcp.status_detector import (
+from terminalcp.claude_status import (
     TerminalState,
     TaskStatus,
     InteractionType,
@@ -320,7 +320,7 @@ class TestStatusDetector:
     
     def test_status_detector_initialization(self):
         """测试 StatusDetector 可以使用 TerminalClient 初始化。"""
-        from terminalcp.status_detector import StatusDetector
+        from terminalcp.claude_status import StatusDetector
         from terminalcp.terminal_client import TerminalClient
         
         # 创建模拟终端客户端
@@ -337,14 +337,13 @@ class TestStatusDetector:
         assert len(detector._live_outputs) == 0
         assert isinstance(detector._pyte_renderers, dict)
         assert len(detector._pyte_renderers) == 0
-        assert detector._terminal_detector is not None
         assert detector._polling_interval == 1.0
         assert detector._interactive_threshold == 2
         assert detector._completed_threshold == 5
     
     def test_status_detector_configuration_constants(self):
         """测试 StatusDetector 使用正确的配置常量。"""
-        from terminalcp.status_detector import (
+        from terminalcp.claude_status import (
             StatusDetector,
             POLLING_INTERVAL_SECONDS,
             INTERACTIVE_STABILITY_THRESHOLD,

@@ -6,7 +6,7 @@ StatusDetector._poll_session 方法的测试。
 
 import pytest
 from unittest.mock import AsyncMock, MagicMock
-from terminalcp.status_detector import (
+from terminalcp.claude_status import (
     StatusDetector,
     SessionState,
     TerminalState,
